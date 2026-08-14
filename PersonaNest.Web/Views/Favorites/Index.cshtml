@@ -1,0 +1,67 @@
+@model FavoritesViewModel
+@{
+    ViewData["Title"] = "Favorites";
+    ViewData["Nav"] = "Favorites";
+}
+
+<div class="page-shell">
+    <div style="font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--text-primary);margin-bottom:var(--sp-6)">
+        My Favorites <span style="font-size:16px;color:var(--text-muted);font-family:var(--font-mono)">(@Model.TotalCount)</span>
+    </div>
+
+    @if (Model.Favorites.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="empty-state-title">No favorites yet</div>
+            <p>
+                Favorite media from its page to see it here.
+                <a asp-controller="Search" asp-action="Index">Find something &rarr;</a>
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="search-results-grid">
+            @foreach (var media in Model.Favorites)
+            {
+                <a class="card media-card" style="display:block;text-decoration:none;color:inherit"
+                   asp-controller="Media" asp-action="Details" asp-route-id="@media.Id">
+                    <div class="media-card-cover">
+                        @if (!string.IsNullOrEmpty(media.OfficialCoverUrl))
+                        {
+                            <img src="@media.OfficialCoverUrl" alt="@media.Title" />
+                        }
+                        <div class="media-card-category">@media.CategoryName</div>
+                        @if (media.AverageRating is not null)
+                        {
+                            <div class="media-card-rating">&#9733; @media.AverageRating.Value.ToString("0.0")</div>
+                        }
+                    </div>
+                    <div class="media-card-body">
+                        <div class="media-card-title">@media.Title</div>
+                        <div class="media-card-meta">@media.ReleaseYear</div>
+                    </div>
+                </a>
+            }
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <div class="flex gap-2" style="justify-content:center;margin-top:var(--sp-8)">
+                @if (Model.Page > 1)
+                {
+                    <a class="btn btn-secondary btn-sm" asp-controller="Favorites" asp-action="Index"
+                       asp-route-page="@(Model.Page - 1)">&larr; Previous</a>
+                }
+                <span class="mono" style="align-self:center;color:var(--text-muted);font-size:13px">
+                    Page @Model.Page of @Model.TotalPages
+                </span>
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a class="btn btn-secondary btn-sm" asp-controller="Favorites" asp-action="Index"
+                       asp-route-page="@(Model.Page + 1)">Next &rarr;</a>
+                }
+            </div>
+        }
+    }
+</div>

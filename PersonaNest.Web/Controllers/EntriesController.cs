@@ -19,11 +19,14 @@ public class EntriesController : Controller
 {
     private readonly IEntryService _entryService;
     private readonly IMediaService _mediaService;
+    private readonly ICollectionService _collectionService;
 
-    public EntriesController(IEntryService entryService, IMediaService mediaService)
+    public EntriesController(
+        IEntryService entryService, IMediaService mediaService, ICollectionService collectionService)
     {
         _entryService = entryService;
         _mediaService = mediaService;
+        _collectionService = collectionService;
     }
 
     /// <summary>GET /Entries</summary>
@@ -239,6 +242,13 @@ public class EntriesController : Controller
             ViewerCanComment = viewerId is not null,
             ViewerHasLiked = false
         };
+
+        if (viewerId is not null)
+        {
+            var myCollections = await _collectionService.GetForUserAsync(
+                viewerId, viewerId, page: 1, pageSize: 50, cancellationToken);
+            model.ViewerCollections = myCollections.Items;
+        }
 
         return View(model);
     }

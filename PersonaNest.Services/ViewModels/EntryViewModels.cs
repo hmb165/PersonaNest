@@ -47,4 +47,7 @@ public sealed class EntryDetailsViewModel
     public EntryDetailDto Entry { get; set; } = new();
     public bool ViewerCanComment { get; set; }
     public bool ViewerHasLiked { get; set; }
+
+    /// <summary>The signed-in viewer's own collections, for the "+ Add to Collection" picker (§20).</summary>
+    public IReadOnlyList<CollectionCardDto> ViewerCollections { get; set; } = Array.Empty<CollectionCardDto>();
 }

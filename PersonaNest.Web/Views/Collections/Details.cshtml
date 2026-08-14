@@ -1,0 +1,117 @@
+@model CollectionDetailsViewModel
+@{
+    var collection = Model.Collection;
+    ViewData["Title"] = collection.Name;
+}
+
+<div class="page-shell">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:var(--sp-4);margin-bottom:var(--sp-2)">
+        <div>
+            <div style="font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--text-primary)">
+                @collection.Name
+            </div>
+            <div class="mono" style="font-size:12px;color:var(--text-muted);margin-top:4px">
+                by
+                <a asp-controller="Profile" asp-action="Index" asp-route-userName="@collection.OwnerUserName"
+                   style="color:var(--primary)">@collection.OwnerDisplayName</a>
+                &middot; @collection.Items.Count item@(collection.Items.Count == 1 ? "" : "s")
+                &middot; <span class="badge badge-muted" style="font-size:10px">@collection.Privacy</span>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(collection.Description))
+    {
+        <p style="font-size:14px;color:var(--text-secondary);line-height:1.6;max-width:700px;margin:var(--sp-4) 0">
+            @collection.Description
+        </p>
+    }
+
+    @if (collection.ViewerIsOwner)
+    {
+        <section class="settings-section" style="margin-top:var(--sp-6)">
+            <div class="settings-section-title">Edit Collection</div>
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+            <form asp-controller="Collections" asp-action="Update" asp-route-id="@collection.Id" method="post" novalidate>
+                <div style="display:grid;grid-template-columns:2fr 1fr;gap:var(--sp-4)">
+                    <div class="form-group" style="margin:0">
+                        <label class="form-label" asp-for="EditForm.Name"></label>
+                        <input class="form-input" asp-for="EditForm.Name" />
+                        <span asp-validation-for="EditForm.Name"></span>
+                    </div>
+                    <div class="form-group" style="margin:0">
+                        <label class="form-label" asp-for="EditForm.Privacy"></label>
+                        <select class="form-select" asp-for="EditForm.Privacy"
+                                asp-items="Html.GetEnumSelectList<Privacy>()"></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" asp-for="EditForm.Description"></label>
+                    <input class="form-input" asp-for="EditForm.Description" />
+                    <span asp-validation-for="EditForm.Description"></span>
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+            <div class="divider"></div>
+            <form asp-controller="Collections" asp-action="Delete" asp-route-id="@collection.Id" method="post"
+                  onsubmit="return confirm('Delete \'@collection.Name\'? This cannot be undone.');">
+                <button type="submit" class="btn btn-danger btn-sm">Delete Collection</button>
+            </form>
+        </section>
+    }
+
+    <div style="margin-top:var(--sp-6)">
+        <div class="dashboard-section-title">Items</div>
+
+        @if (collection.Items.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-state-title">No media in this collection yet</div>
+                <p>Add media from its page using "+ Add to Collection".</p>
+            </div>
+        }
+        else
+        {
+            <div class="search-results-grid">
+                @foreach (var item in collection.Items)
+                {
+                    <div class="card media-card" style="position:relative">
+                        <a asp-controller="Media" asp-action="Details" asp-route-id="@item.MediaId"
+                           style="display:block;text-decoration:none;color:inherit">
+                            <div class="media-card-cover">
+                                @if (!string.IsNullOrEmpty(item.OfficialCoverUrl))
+                                {
+                                    <img src="@item.OfficialCoverUrl" alt="@item.Title" />
+                                }
+                                <div class="media-card-category">@item.CategoryName</div>
+                                @if (item.AverageRating is not null)
+                                {
+                                    <div class="media-card-rating">&#9733; @item.AverageRating.Value.ToString("0.0")</div>
+                                }
+                            </div>
+                            <div class="media-card-body">
+                                <div class="media-card-title">@item.Title</div>
+                                <div class="media-card-meta">@item.ReleaseYear</div>
+                            </div>
+                        </a>
+                        @if (collection.ViewerIsOwner)
+                        {
+                            <form asp-controller="Collections" asp-action="RemoveItem" asp-route-id="@collection.Id"
+                                  method="post" style="position:absolute;top:6px;right:6px;z-index:1">
+                                <input type="hidden" name="mediaId" value="@item.MediaId" />
+                                <button type="submit" class="btn btn-danger btn-sm" style="padding:2px 8px"
+                                        title="Remove from collection">&#10005;</button>
+                            </form>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

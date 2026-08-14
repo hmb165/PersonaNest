@@ -40,6 +40,10 @@
         {
             <a class="btn btn-ghost btn-sm d-none d-md-inline-flex"
                asp-controller="Entries" asp-action="Index">My Entries</a>
+            <a class="btn btn-ghost btn-sm d-none d-lg-inline-flex"
+               asp-controller="Favorites" asp-action="Index">Favorites</a>
+            <a class="btn btn-ghost btn-sm d-none d-lg-inline-flex"
+               asp-controller="Collections" asp-action="Index">Collections</a>
             <a class="btn btn-ghost btn-sm d-none d-md-inline-flex"
                asp-controller="Profile" asp-action="Index"
                asp-route-userName="@User.Identity!.Name">My Profile</a>

@@ -35,6 +35,9 @@ public sealed class MediaDetailsViewModel
     public IReadOnlyList<EntryCardDto> CommunityEntries { get; set; } = Array.Empty<EntryCardDto>();
     public int CommunityEntryTotal { get; set; }
     public int Page { get; set; } = 1;
+
+    /// <summary>The signed-in viewer's own collections, for the "+ Add to Collection" picker (§20).</summary>
+    public IReadOnlyList<CollectionCardDto> ViewerCollections { get; set; } = Array.Empty<CollectionCardDto>();
 }
 
 /// <summary>/Media/Add — with the duplicate warning §4 requires.</summary>

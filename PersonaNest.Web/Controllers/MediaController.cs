@@ -22,11 +22,14 @@ public class MediaController : Controller
 {
     private readonly IMediaService _mediaService;
     private readonly IEntryService _entryService;
+    private readonly ICollectionService _collectionService;
 
-    public MediaController(IMediaService mediaService, IEntryService entryService)
+    public MediaController(
+        IMediaService mediaService, IEntryService entryService, ICollectionService collectionService)
     {
         _mediaService = mediaService;
         _entryService = entryService;
+        _collectionService = collectionService;
     }
 
     /// <summary>GET /Media/Details/{id}</summary>
@@ -53,6 +56,13 @@ public class MediaController : Controller
             CommunityEntryTotal = entries.TotalCount,
             Page = page
         };
+
+        if (viewerId is not null)
+        {
+            var myCollections = await _collectionService.GetForUserAsync(
+                viewerId, viewerId, page: 1, pageSize: 50, cancellationToken);
+            model.ViewerCollections = myCollections.Items;
+        }
 
         return View(model);
     }

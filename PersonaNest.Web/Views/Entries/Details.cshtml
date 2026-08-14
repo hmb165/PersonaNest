@@ -112,9 +112,32 @@
                         &#9825; Like Entry
                     </span>
                 }
-                <span class="btn btn-secondary" style="width:100%;opacity:.6;cursor:default" title="Collections arrive in Phase 8">
-                    + Add to Collection
-                </span>
+                @if (Model.ViewerCollections.Count > 0)
+                {
+                    <form asp-controller="Collections" asp-action="AddItem" method="post">
+                        <input type="hidden" name="MediaId" value="@entry.MediaId" />
+                        <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+                        <select name="CollectionId" class="form-select" style="width:100%;margin-bottom:var(--sp-2)">
+                            @foreach (var c in Model.ViewerCollections)
+                            {
+                                <option value="@c.Id">@c.Name</option>
+                            }
+                        </select>
+                        <button type="submit" class="btn btn-secondary" style="width:100%">+ Add to Collection</button>
+                    </form>
+                }
+                else if (User.IsSignedIn())
+                {
+                    <a class="btn btn-secondary" style="width:100%" asp-controller="Collections" asp-action="Index">
+                        + Create a collection first
+                    </a>
+                }
+                else
+                {
+                    <a class="btn btn-secondary" style="width:100%" asp-controller="Auth" asp-action="Login">
+                        + Add to Collection
+                    </a>
+                }
             </div>
         </div>
         <div class="card" style="padding:var(--sp-5)">

@@ -1,0 +1,78 @@
+@model CollectionsViewModel
+@{
+    ViewData["Title"] = "Collections";
+    ViewData["Nav"] = "Collections";
+}
+
+<div class="page-shell">
+    <div style="font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--text-primary);margin-bottom:var(--sp-6)">
+        My Collections <span style="font-size:16px;color:var(--text-muted);font-family:var(--font-mono)">(@Model.TotalCount)</span>
+    </div>
+
+    <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+    <section class="settings-section">
+        <div class="settings-section-title">New Collection</div>
+        <form asp-controller="Collections" asp-action="Create" method="post" novalidate>
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:var(--sp-4)">
+                <div class="form-group" style="margin:0">
+                    <label class="form-label" asp-for="NewCollection.Name"></label>
+                    <input class="form-input" asp-for="NewCollection.Name" placeholder="e.g. Comfort Movies" />
+                    <span asp-validation-for="NewCollection.Name"></span>
+                </div>
+                <div class="form-group" style="margin:0">
+                    <label class="form-label" asp-for="NewCollection.Privacy"></label>
+                    <select class="form-select" asp-for="NewCollection.Privacy"
+                            asp-items="Html.GetEnumSelectList<Privacy>()"></select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label" asp-for="NewCollection.Description"></label>
+                <input class="form-input" asp-for="NewCollection.Description" placeholder="Optional" />
+                <span asp-validation-for="NewCollection.Description"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">+ New Collection</button>
+        </form>
+    </section>
+
+    @if (Model.Collections.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="empty-state-title">No collections yet</div>
+            <p>Create your first one above.</p>
+        </div>
+    }
+    else
+    {
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:var(--sp-5)">
+            @foreach (var collection in Model.Collections)
+            {
+                <a class="collection-card" style="display:block;text-decoration:none;color:inherit"
+                   asp-controller="Collections" asp-action="Details" asp-route-id="@collection.Id">
+                    <div class="collection-covers">
+                        @for (var i = 0; i < 4; i++)
+                        {
+                            <div class="collection-covers-img">
+                                @if (i < collection.PreviewCoverUrls.Count)
+                                {
+                                    <img src="@collection.PreviewCoverUrls[i]" alt="" />
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="collection-body">
+                        <div class="collection-name">@collection.Name</div>
+                        <div class="collection-meta">
+                            @collection.ItemCount item@(collection.ItemCount == 1 ? "" : "s")
+                            @(collection.Privacy == PersonaNest.Domain.Enums.Privacy.Public ? "· 🌐 Public" : $"· {collection.Privacy}")
+                        </div>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

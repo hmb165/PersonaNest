@@ -72,12 +72,46 @@
                     + Log Entry
                 </a>
             }
-            <span class="btn btn-accent" style="opacity:.6;cursor:default" title="Favorites arrive in Phase 8">
-                &#9825; Favorite
-            </span>
-            <span class="btn btn-secondary" style="opacity:.6;cursor:default" title="Collections arrive in Phase 8">
-                + Add to Collection
-            </span>
+            @{
+                var returnUrl = Context.Request.Path + Context.Request.QueryString;
+            }
+            @if (User.IsSignedIn())
+            {
+                <form asp-controller="Favorites" asp-action="Toggle" method="post" style="display:inline">
+                    <input type="hidden" name="mediaId" value="@media.Id" />
+                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                    <button type="submit" class="btn @(media.IsFavoritedByViewer ? "btn-accent" : "btn-secondary")">
+                        @(media.IsFavoritedByViewer ? "♥ Favorited" : "♡ Favorite")
+                    </button>
+                </form>
+
+                @if (Model.ViewerCollections.Count > 0)
+                {
+                    <form asp-controller="Collections" asp-action="AddItem" method="post"
+                          style="display:inline-flex;gap:6px;align-items:center">
+                        <input type="hidden" name="MediaId" value="@media.Id" />
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                        <select name="CollectionId" class="form-select" style="padding:7px 30px 7px 10px;max-width:160px">
+                            @foreach (var c in Model.ViewerCollections)
+                            {
+                                <option value="@c.Id">@c.Name</option>
+                            }
+                        </select>
+                        <button type="submit" class="btn btn-secondary">+ Add to Collection</button>
+                    </form>
+                }
+                else
+                {
+                    <a class="btn btn-secondary" asp-controller="Collections" asp-action="Index">
+                        + Create a collection first
+                    </a>
+                }
+            }
+            else
+            {
+                <a class="btn btn-accent" asp-controller="Auth" asp-action="Login">&#9825; Favorite</a>
+                <a class="btn btn-secondary" asp-controller="Auth" asp-action="Login">+ Add to Collection</a>
+            }
         </div>
     </div>
 </div>
