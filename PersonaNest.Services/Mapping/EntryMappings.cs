@@ -79,7 +79,8 @@ public static class EntryMappings
                     .ToList(),
             LikeCount = e.Likes.Count(),
             CommentCount = e.Comments.Count(),
-            ViewerIsAuthor = viewerId != null && e.UserId == viewerId
+            ViewerIsAuthor = viewerId != null && e.UserId == viewerId,
+            ViewerHasLiked = viewerId != null && e.Likes.Any(l => l.UserId == viewerId)
         };
 
     public static Entry ToEntity(this CreateEntryRequest request, string userId, DateTime utcNow)

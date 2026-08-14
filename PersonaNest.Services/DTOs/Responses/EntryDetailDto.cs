@@ -40,4 +40,7 @@ public sealed record EntryDetailDto
 
     /// <summary>True when the viewer owns this entry and may edit or delete it.</summary>
     public bool ViewerIsAuthor { get; init; }
+
+    /// <summary>True when the signed-in viewer has already liked this entry (§18).</summary>
+    public bool ViewerHasLiked { get; init; }
 }

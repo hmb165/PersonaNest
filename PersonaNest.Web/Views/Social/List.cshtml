@@ -1,0 +1,90 @@
+@model SocialListViewModel
+@{
+    ViewData["Title"] = $"{Model.Mode} · {Model.ProfileDisplayName}";
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+}
+
+<div class="page-shell">
+    <div style="font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--text-primary);margin-bottom:var(--sp-5)">
+        <a asp-controller="Profile" asp-action="Index" asp-route-userName="@Model.ProfileUserName"
+           style="color:inherit;text-decoration:none">&#64;@Model.ProfileUserName</a>
+    </div>
+
+    <nav class="profile-tabs">
+        <a class="profile-tab @(Model.Mode == "Following" ? "active" : null)"
+           asp-controller="Social" asp-action="Following" asp-route-userName="@Model.ProfileUserName">
+            Following <span class="mono" style="font-size:12px;margin-left:4px">@Model.FollowingCount</span>
+        </a>
+        <a class="profile-tab @(Model.Mode == "Followers" ? "active" : null)"
+           asp-controller="Social" asp-action="Followers" asp-route-userName="@Model.ProfileUserName">
+            Followers <span class="mono" style="font-size:12px;margin-left:4px">@Model.FollowerCount</span>
+        </a>
+    </nav>
+
+    <div style="display:flex;flex-direction:column;gap:var(--sp-3);max-width:520px;margin-top:var(--sp-5)">
+        @if (Model.Users.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-state-title">Nobody here yet</div>
+                <p>
+                    @(Model.Mode == "Following" ? "Not following anyone yet." : "No followers yet.")
+                </p>
+            </div>
+        }
+        else
+        {
+            @foreach (var user in Model.Users)
+            {
+                <div class="follow-item">
+                    <a class="follow-item-avatar" asp-controller="Profile" asp-action="Index" asp-route-userName="@user.UserName">
+                        @if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
+                        {
+                            <img src="@user.ProfilePictureUrl" alt="@user.DisplayName" />
+                        }
+                        else
+                        {
+                            <span class="avatar-fallback">@user.DisplayName.FirstOrDefault()</span>
+                        }
+                    </a>
+                    <div>
+                        <a class="follow-item-name" style="color:inherit;text-decoration:none"
+                           asp-controller="Profile" asp-action="Index" asp-route-userName="@user.UserName">
+                            @user.DisplayName
+                        </a>
+                        <div class="follow-item-handle">&#64;@user.UserName &middot; @user.EntryCount entries</div>
+                    </div>
+                    <div class="follow-item-actions">
+                        @if (User.IsSignedIn() && User.Identity!.Name != user.UserName)
+                        {
+                            <form asp-controller="Social" asp-action="Follow" asp-route-id="@user.Id" method="post">
+                                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                <button type="submit" class="btn @(user.IsFollowedByViewer ? "btn-secondary" : "btn-primary") btn-sm">
+                                    @(user.IsFollowedByViewer ? "Following ✓" : "Follow")
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <div class="flex gap-2" style="justify-content:center;margin-top:var(--sp-6)">
+            @if (Model.Page > 1)
+            {
+                <a class="btn btn-secondary btn-sm" asp-controller="Social" asp-action="@Model.Mode"
+                   asp-route-userName="@Model.ProfileUserName" asp-route-page="@(Model.Page - 1)">&larr; Previous</a>
+            }
+            <span class="mono" style="align-self:center;color:var(--text-muted);font-size:13px">
+                Page @Model.Page of @Model.TotalPages
+            </span>
+            @if (Model.Page < Model.TotalPages)
+            {
+                <a class="btn btn-secondary btn-sm" asp-controller="Social" asp-action="@Model.Mode"
+                   asp-route-userName="@Model.ProfileUserName" asp-route-page="@(Model.Page + 1)">Next &rarr;</a>
+            }
+        </div>
+    }
+</div>

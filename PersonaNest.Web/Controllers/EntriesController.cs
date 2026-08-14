@@ -20,13 +20,16 @@ public class EntriesController : Controller
     private readonly IEntryService _entryService;
     private readonly IMediaService _mediaService;
     private readonly ICollectionService _collectionService;
+    private readonly ICommentService _commentService;
 
     public EntriesController(
-        IEntryService entryService, IMediaService mediaService, ICollectionService collectionService)
+        IEntryService entryService, IMediaService mediaService,
+        ICollectionService collectionService, ICommentService commentService)
     {
         _entryService = entryService;
         _mediaService = mediaService;
         _collectionService = collectionService;
+        _commentService = commentService;
     }
 
     /// <summary>GET /Entries</summary>
@@ -221,6 +224,22 @@ public class EntriesController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    /// <summary>POST /Entries/Like/{id}</summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Like(int id, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId()!;
+        var result = await _entryService.ToggleLikeAsync(userId, id, cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            TempData["Error"] = result.FirstError;
+        }
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
     /// <summary>GET /Entries/Details/{id}</summary>
     [HttpGet]
     [AllowAnonymous]
@@ -240,7 +259,7 @@ public class EntriesController : Controller
         {
             Entry = entry,
             ViewerCanComment = viewerId is not null,
-            ViewerHasLiked = false
+            Comments = await _commentService.GetForEntryAsync(id, viewerId, cancellationToken)
         };
 
         if (viewerId is not null)

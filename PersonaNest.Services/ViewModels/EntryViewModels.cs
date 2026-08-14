@@ -41,12 +41,14 @@ public sealed class EntryFormViewModel
     public int? ExistingEntryId { get; set; }
 }
 
-/// <summary>/Entries/Details/{id} — full entry with the comment thread (Phase 9 fills comments).</summary>
+/// <summary>/Entries/Details/{id} — full entry with the comment thread.</summary>
 public sealed class EntryDetailsViewModel
 {
     public EntryDetailDto Entry { get; set; } = new();
     public bool ViewerCanComment { get; set; }
-    public bool ViewerHasLiked { get; set; }
+
+    /// <summary>Top-level comments, each with its replies attached (§5, §18).</summary>
+    public IReadOnlyList<CommentDto> Comments { get; set; } = Array.Empty<CommentDto>();
 
     /// <summary>The signed-in viewer's own collections, for the "+ Add to Collection" picker (§20).</summary>
     public IReadOnlyList<CollectionCardDto> ViewerCollections { get; set; } = Array.Empty<CollectionCardDto>();

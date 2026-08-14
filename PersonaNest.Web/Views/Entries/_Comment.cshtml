@@ -1,0 +1,78 @@
+@model CommentDto
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
+@{
+    var isReply = ViewData["IsReply"] as bool? ?? false;
+    var entryId = (int)ViewData["EntryId"]!;
+    var viewerCanComment = ViewData["ViewerCanComment"] as bool? ?? false;
+}
+
+<div class="comment" style="@(isReply ? "margin-left:44px;margin-top:var(--sp-3)" : "margin-bottom:var(--sp-4)")">
+    <div class="comment-avatar">
+        @if (!string.IsNullOrEmpty(Model.AuthorProfilePictureUrl))
+        {
+            <img src="@Model.AuthorProfilePictureUrl" alt="@Model.AuthorDisplayName" />
+        }
+        else
+        {
+            <span class="avatar-fallback">@Model.AuthorDisplayName.FirstOrDefault()</span>
+        }
+    </div>
+    <div class="comment-body">
+        <div class="comment-header">
+            <a class="comment-user" style="text-decoration:none" asp-controller="Profile" asp-action="Index"
+               asp-route-userName="@Model.AuthorUserName">@Model.AuthorDisplayName</a>
+            <span class="comment-time">@Model.CreatedAt.ToString("MMM d, yyyy")</span>
+        </div>
+        <div class="comment-text">@Model.Content</div>
+        <div class="comment-actions">
+            @if (viewerCanComment)
+            {
+                <form asp-controller="Comments" asp-action="Like" asp-route-id="@Model.Id" method="post" style="display:inline">
+                    <input type="hidden" name="entryId" value="@entryId" />
+                    <button type="submit" class="comment-action"
+                            style="background:none;border:none;padding:0;font:inherit;cursor:pointer;color:@(Model.ViewerHasLiked ? "var(--accent)" : "var(--text-muted)")">
+                        &#9825; @Model.LikeCount
+                    </button>
+                </form>
+            }
+            else
+            {
+                <span class="comment-action" style="cursor:default">&#9825; @Model.LikeCount</span>
+            }
+
+            @if (Model.ViewerIsAuthor)
+            {
+                <form asp-controller="Comments" asp-action="Delete" asp-route-id="@Model.Id" method="post" style="display:inline"
+                      onsubmit="return confirm('Delete this comment?');">
+                    <input type="hidden" name="entryId" value="@entryId" />
+                    <button type="submit" class="comment-action"
+                            style="background:none;border:none;padding:0;font:inherit;cursor:pointer;color:var(--danger)">Delete</button>
+                </form>
+            }
+        </div>
+
+        @if (!isReply && viewerCanComment)
+        {
+            <details style="margin-top:var(--sp-2)">
+                <summary class="comment-action" style="cursor:pointer">Reply</summary>
+                <form asp-controller="Comments" asp-action="Create" method="post" style="margin-top:var(--sp-2)">
+                    <input type="hidden" name="EntryId" value="@entryId" />
+                    <input type="hidden" name="ParentCommentId" value="@Model.Id" />
+                    <textarea name="Content" class="form-textarea" placeholder="Reply to @Model.AuthorDisplayName…"
+                              style="min-height:52px" maxlength="2000"></textarea>
+                    <div style="display:flex;justify-content:flex-end;margin-top:var(--sp-2)">
+                        <button type="submit" class="btn btn-primary btn-sm">Post Reply</button>
+                    </div>
+                </form>
+            </details>
+        }
+    </div>
+</div>
+
+@if (!isReply)
+{
+    foreach (var reply in Model.Replies)
+    {
+        <partial name="_Comment" model="reply" view-data="@(new ViewDataDictionary(ViewData) { ["IsReply"] = true })" />
+    }
+}

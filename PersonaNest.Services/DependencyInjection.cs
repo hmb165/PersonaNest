@@ -34,6 +34,7 @@ public static class DependencyInjection
         services.AddScoped<ICollectionService, CollectionService>();
         services.AddScoped<IFavoriteService, FavoriteService>();
         services.AddScoped<IFollowService, FollowService>();
+        services.AddScoped<ICommentService, CommentService>();
         services.AddScoped<IModeratorApplicationService, ModeratorApplicationService>();
         services.AddScoped<IAdminService, AdminService>();
 

@@ -1,4 +1,5 @@
 @model EntryDetailsViewModel
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
 @{
     var entry = Model.Entry;
     ViewData["Title"] = $"{entry.MediaTitle} · {entry.AuthorDisplayName}";
@@ -87,10 +88,42 @@
             Comments <span style="font-size:14px;color:var(--text-muted);font-family:var(--font-mono)">(@entry.CommentCount)</span>
         </div>
 
-        <div class="empty-state">
-            <div class="empty-state-title">Comments arrive in Phase 9</div>
-            <p>Come back once the social layer is built to discuss this entry.</p>
-        </div>
+        @if (Model.ViewerCanComment)
+        {
+            <form asp-controller="Comments" asp-action="Create" method="post" style="margin-bottom:var(--sp-5)">
+                <input type="hidden" name="EntryId" value="@entry.Id" />
+                <textarea name="Content" class="form-textarea" placeholder="Share your thoughts on this entry…"
+                          style="min-height:72px" maxlength="2000" required></textarea>
+                <div style="display:flex;justify-content:flex-end;margin-top:var(--sp-2)">
+                    <button type="submit" class="btn btn-primary btn-sm">Post Comment</button>
+                </div>
+            </form>
+        }
+        else
+        {
+            <div class="alert alert-info" style="margin-bottom:var(--sp-5)">
+                <span class="alert-icon">&#8505;</span>
+                <div class="alert-body"><a asp-controller="Auth" asp-action="Login">Log in</a> to join the conversation.</div>
+            </div>
+        }
+
+        @if (Model.Comments.Count == 0)
+        {
+            <p class="text-muted" style="font-size:13px">No comments yet &mdash; be the first.</p>
+        }
+        else
+        {
+            var commentViewData = new ViewDataDictionary(ViewData)
+            {
+                ["EntryId"] = entry.Id,
+                ["ViewerCanComment"] = Model.ViewerCanComment
+            };
+
+            foreach (var comment in Model.Comments)
+            {
+                <partial name="_Comment" model="comment" view-data="commentViewData" />
+            }
+        }
     </div>
 
     <div style="display:flex;flex-direction:column;gap:var(--sp-4)">
@@ -106,11 +139,19 @@
                         <button type="submit" class="btn btn-danger" style="width:100%">Delete Entry</button>
                     </form>
                 }
+                else if (User.IsSignedIn())
+                {
+                    <form asp-controller="Entries" asp-action="Like" asp-route-id="@entry.Id" method="post">
+                        <button type="submit" class="btn @(entry.ViewerHasLiked ? "btn-accent" : "btn-secondary")" style="width:100%">
+                            @(entry.ViewerHasLiked ? "♥ Liked" : "♡ Like Entry") (@entry.LikeCount)
+                        </button>
+                    </form>
+                }
                 else
                 {
-                    <span class="btn btn-accent" style="width:100%;opacity:.6;cursor:default" title="Likes arrive in Phase 9">
+                    <a class="btn btn-accent" style="width:100%" asp-controller="Auth" asp-action="Login">
                         &#9825; Like Entry
-                    </span>
+                    </a>
                 }
                 @if (Model.ViewerCollections.Count > 0)
                 {

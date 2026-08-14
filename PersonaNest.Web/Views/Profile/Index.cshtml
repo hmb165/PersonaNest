@@ -55,10 +55,16 @@
             }
             else if (User.IsSignedIn())
             {
-                @* Follow is wired up in Phase 9, together with the rest of the social features. *@
-                <button class="btn btn-primary" disabled title="Available in Phase 9">
-                    @(Model.Header.IsFollowedByViewer ? "Following" : "Follow")
-                </button>
+                <form asp-controller="Social" asp-action="Follow" asp-route-id="@Model.Header.Id" method="post">
+                    <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+                    <button type="submit" class="btn @(Model.Header.IsFollowedByViewer ? "btn-secondary" : "btn-primary")">
+                        @(Model.Header.IsFollowedByViewer ? "Following ✓" : "Follow")
+                    </button>
+                </form>
+            }
+            else
+            {
+                <a class="btn btn-primary" asp-controller="Auth" asp-action="Login">Follow</a>
             }
         </div>
     </header>
@@ -68,14 +74,16 @@
             <div class="profile-stat-val">@Model.Stats.EntryCount</div>
             <div class="profile-stat-label">Entries</div>
         </div>
-        <div class="profile-stat">
+        <a class="profile-stat" style="text-decoration:none;color:inherit" asp-controller="Social" asp-action="Following"
+           asp-route-userName="@Model.Header.UserName">
             <div class="profile-stat-val">@Model.Stats.FollowingCount</div>
             <div class="profile-stat-label">Following</div>
-        </div>
-        <div class="profile-stat">
+        </a>
+        <a class="profile-stat" style="text-decoration:none;color:inherit" asp-controller="Social" asp-action="Followers"
+           asp-route-userName="@Model.Header.UserName">
             <div class="profile-stat-val">@Model.Stats.FollowerCount</div>
             <div class="profile-stat-label">Followers</div>
-        </div>
+        </a>
         <div class="profile-stat">
             <div class="profile-stat-val">@Model.Stats.CollectionCount</div>
             <div class="profile-stat-label">Collections</div>

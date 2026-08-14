@@ -51,4 +51,8 @@ public interface IEntryService
         int entryId, string userId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<TagDto>> GetTagsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Adds or removes the viewer's like on an entry (§18). Returns the state after the toggle.</summary>
+    Task<ServiceResult<bool>> ToggleLikeAsync(
+        string userId, int entryId, CancellationToken cancellationToken = default);
 }

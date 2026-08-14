@@ -214,6 +214,44 @@ public class EntryService : IEntryService
             filter: null, LookupMappings.ToTagDto,
             q => q.OrderBy(t => t.Name), page: 1, pageSize: 100, cancellationToken);
 
+    public async Task<ServiceResult<bool>> ToggleLikeAsync(
+        string userId, int entryId, CancellationToken cancellationToken = default)
+    {
+        if (!await _uow.Entries.AnyAsync(e => e.Id == entryId, cancellationToken))
+        {
+            return ServiceResult<bool>.Failure("That entry no longer exists.");
+        }
+
+        var repository = _uow.Repository<EntryLike>();
+
+        var existingId = await repository.FirstOrDefaultAsync(
+            l => l.UserId == userId && l.EntryId == entryId,
+            l => (int?)l.Id,
+            cancellationToken);
+
+        if (existingId is { } id)
+        {
+            var tracked = await repository.GetByIdAsync(id, cancellationToken);
+            if (tracked is not null)
+            {
+                repository.Remove(tracked);
+                await _uow.SaveChangesAsync(cancellationToken);
+            }
+
+            return ServiceResult<bool>.Success(false);
+        }
+
+        await repository.AddAsync(new EntryLike
+        {
+            EntryId = entryId,
+            UserId = userId,
+            CreatedAt = DateTime.UtcNow
+        }, cancellationToken);
+
+        await _uow.SaveChangesAsync(cancellationToken);
+        return ServiceResult<bool>.Success(true);
+    }
+
     /// <summary>
     /// Replaces an entry's tags with the requested set. Clear-and-re-add is correct here:
     /// EntryTag carries no payload, and the set is small.
