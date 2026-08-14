@@ -1,0 +1,103 @@
+@model SearchViewModel
+@{
+    ViewData["Title"] = "Search";
+    ViewData["Nav"] = "Search";
+}
+
+<section class="search-hero">
+    <form asp-controller="Search" asp-action="Index" method="get">
+        <div class="search-box">
+            <input type="text" name="Query" value="@Model.Filter.Query"
+                   placeholder="Search movies, games, books, anime…" autofocus />
+            <span class="search-box-icon">&#128269;</span>
+        </div>
+    </form>
+
+    <div class="search-filters">
+        <a class="tag @(Model.Filter.CategoryId is null ? "active" : null)"
+           asp-controller="Search" asp-action="Index" asp-route-Query="@Model.Filter.Query">All</a>
+        @foreach (var category in Model.Categories)
+        {
+            <a class="tag @(Model.Filter.CategoryId == category.Id ? "active" : null)"
+               asp-controller="Search" asp-action="Index"
+               asp-route-Query="@Model.Filter.Query" asp-route-CategoryId="@category.Id">
+                @category.Icon @category.Name
+            </a>
+        }
+    </div>
+</section>
+
+<div class="search-results">
+    @if (Model.HasResults)
+    {
+        <div style="font-size:13px;color:var(--text-muted);font-family:var(--font-mono);margin-bottom:var(--sp-5)">
+            @Model.TotalCount result@(Model.TotalCount == 1 ? "" : "s")
+            @if (!string.IsNullOrWhiteSpace(Model.Filter.Query))
+            {
+                <text>for "@Model.Filter.Query"</text>
+            }
+        </div>
+
+        <div class="search-results-grid">
+            @foreach (var media in Model.Results)
+            {
+                <a class="card media-card" style="display:block;text-decoration:none;color:inherit"
+                   asp-controller="Media" asp-action="Details" asp-route-id="@media.Id">
+                    <div class="media-card-cover">
+                        @if (!string.IsNullOrEmpty(media.OfficialCoverUrl))
+                        {
+                            <img src="@media.OfficialCoverUrl" alt="@media.Title" />
+                        }
+                        <div class="media-card-category">@media.CategoryName</div>
+                        @if (media.AverageRating is not null)
+                        {
+                            <div class="media-card-rating">&#9733; @media.AverageRating.Value.ToString("0.0")</div>
+                        }
+                    </div>
+                    <div class="media-card-body">
+                        <div class="media-card-title">@media.Title</div>
+                        <div class="media-card-meta">@media.ReleaseYear</div>
+                    </div>
+                </a>
+            }
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <div class="flex gap-2" style="justify-content:center;margin-top:var(--sp-8)">
+                @if (Model.Page > 1)
+                {
+                    <a class="btn btn-secondary btn-sm" asp-controller="Search" asp-action="Index"
+                       asp-route-Query="@Model.Filter.Query" asp-route-CategoryId="@Model.Filter.CategoryId"
+                       asp-route-Page="@(Model.Page - 1)">&larr; Previous</a>
+                }
+                <span class="mono" style="align-self:center;color:var(--text-muted);font-size:13px">
+                    Page @Model.Page of @Model.TotalPages
+                </span>
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a class="btn btn-secondary btn-sm" asp-controller="Search" asp-action="Index"
+                       asp-route-Query="@Model.Filter.Query" asp-route-CategoryId="@Model.Filter.CategoryId"
+                       asp-route-Page="@(Model.Page + 1)">Next &rarr;</a>
+                }
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <div class="empty-state-title">No matches</div>
+            <p>Try a different search, or add it to the database yourself.</p>
+        </div>
+    }
+
+    <div style="margin-top:var(--sp-6);max-width:520px;margin-left:auto;margin-right:auto">
+        <div class="alert alert-warning">
+            <span class="alert-icon">&#9888;</span>
+            <div class="alert-body">
+                <div class="alert-title">Can't find what you're looking for?</div>
+                <a asp-controller="Media" asp-action="Add">Add it to the database &rarr;</a>
+            </div>
+        </div>
+    </div>
+</div>

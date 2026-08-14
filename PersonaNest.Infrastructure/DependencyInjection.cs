@@ -2,8 +2,14 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using PersonaNest.Domain.Abstractions;
 using PersonaNest.Domain.Entities;
 using PersonaNest.Infrastructure.Data;
+using PersonaNest.Infrastructure.Repositories;
+
+// The UnitOfWork class sits inside a namespace of the same name, so it is aliased here to keep
+// the registration below unambiguous.
+using UnitOfWorkImplementation = PersonaNest.Infrastructure.UnitOfWork.UnitOfWork;
 
 namespace PersonaNest.Infrastructure;
 
@@ -63,7 +69,17 @@ public static class DependencyInjection
             options.SlidingExpiration = true;
         });
 
-        // Phase 3 registers the repositories and the Unit of Work here.
+        // ── Phase 3: repositories and Unit of Work (§8, §9) ──────────────────────────────
+        // Scoped, so one DbContext, one change tracker and one unit of work per request.
+        //
+        // The open generic registration lets any entity without a specific repository be reached
+        // through IUnitOfWork.Repository<T>(). Services depend on IUnitOfWork and the repository
+        // interfaces only - never on PersonaNestDbContext (§8, rule 4).
+        services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        services.AddScoped<IEntryRepository, EntryRepository>();
+        services.AddScoped<IMediaRepository, MediaRepository>();
+        services.AddScoped<IReportRepository, ReportRepository>();
+        services.AddScoped<IUnitOfWork, UnitOfWorkImplementation>();
 
         return services;
     }

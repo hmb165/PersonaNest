@@ -1,8 +1,87 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model HomeViewModel
+@{
+    ViewData["Title"] = "Home";
+    ViewData["Nav"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<section class="home-hero">
+    <div class="home-hero-bg"></div>
+    <div class="home-hero-glow"></div>
+    <div class="home-hero-content">
+        <div class="home-hero-eyebrow">Your Media Journal</div>
+        <h1 class="home-hero-title">Your home for <em>everything</em> you love.</h1>
+        <p class="home-hero-desc">
+            Track games, movies, anime, books, and more. Build your taste profile.
+            Share what moves you.
+        </p>
+        <div class="home-hero-cta">
+            @if (User.IsSignedIn())
+            {
+                <a class="btn btn-primary btn-lg" asp-controller="Profile" asp-action="Index"
+                   asp-route-userName="@User.Identity!.Name">Go to your profile</a>
+            }
+            else
+            {
+                <a class="btn btn-primary btn-lg" asp-controller="Auth" asp-action="Register">Start for free</a>
+                <a class="btn btn-secondary btn-lg" asp-controller="Auth" asp-action="Login">Log in</a>
+            }
+        </div>
+    </div>
+</section>
+
+@* Categories are seeded reference data, read through IMediaService - never hard-coded in the
+   view, because Admin -> Category Management can change them (§15). *@
+<div class="home-categories">
+    @foreach (var category in Model.Categories)
+    {
+        <a class="category-pill" style="text-decoration:none;color:inherit" title="@category.Description"
+           asp-controller="Search" asp-action="Index" asp-route-CategoryId="@category.Id">
+            <div class="category-pill-icon">@category.Icon</div>
+            <div class="category-pill-label">@category.Name</div>
+        </a>
+    }
 </div>
+
+<section class="home-section" style="border-top:1px solid var(--border)">
+    <div class="home-section-header">
+        <h2 class="home-section-title">Trending this week</h2>
+        <a class="home-section-more" asp-controller="Search" asp-action="Index">See all &rarr;</a>
+    </div>
+
+    @if (Model.Trending.Count > 0)
+    {
+        <div class="home-media-grid">
+            @foreach (var media in Model.Trending)
+            {
+                <a class="card media-card" style="display:block;text-decoration:none;color:inherit"
+                   asp-controller="Media" asp-action="Details" asp-route-id="@media.Id">
+                    <div class="media-card-cover">
+                        @if (!string.IsNullOrEmpty(media.OfficialCoverUrl))
+                        {
+                            <img src="@media.OfficialCoverUrl" alt="@media.Title" />
+                        }
+                        <div class="media-card-category">@media.CategoryName</div>
+                        @if (media.AverageRating is not null)
+                        {
+                            <div class="media-card-rating">&#9733; @media.AverageRating.Value.ToString("0.0")</div>
+                        }
+                    </div>
+                    <div class="media-card-body">
+                        <div class="media-card-title">@media.Title</div>
+                        <div class="media-card-meta">@media.ReleaseYear</div>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <div class="empty-state-title">The catalogue is empty</div>
+            <p>
+                Nobody has added any media yet.
+                <a asp-controller="Media" asp-action="Add">Add the first one &rarr;</a>
+            </p>
+        </div>
+    }
+</section>

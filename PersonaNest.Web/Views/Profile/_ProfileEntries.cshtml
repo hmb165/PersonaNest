@@ -1,0 +1,49 @@
+@model IReadOnlyList<EntryCardDto>
+
+<h2 class="dashboard-section-title">Recent Entries</h2>
+
+@if (Model.Count == 0)
+{
+    <div class="empty-state">
+        <div class="empty-state-title">No entries yet</div>
+        <p>Entries you can see will appear here. Logging entries arrives in Phase 7.</p>
+    </div>
+}
+else
+{
+    <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
+        @foreach (var entry in Model)
+        {
+            <article class="card entry-card">
+                <div class="entry-card-cover">
+                    @if (!string.IsNullOrEmpty(entry.CoverUrl))
+                    {
+                        <img src="@entry.CoverUrl" alt="@entry.MediaTitle" />
+                    }
+                </div>
+                <div class="entry-card-body">
+                    <div class="entry-card-title">@entry.MediaTitle</div>
+                    <div class="entry-card-meta">
+                        <span class="badge badge-muted">@entry.CategoryName</span>
+                        @if (entry.Rating is not null)
+                        {
+                            <span style="color:var(--warning)">&#9733; @entry.Rating.Value.ToString("0.0")</span>
+                        }
+                        <span>@entry.CreatedAt.ToString("d MMM yyyy")</span>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(entry.Review))
+                    {
+                        <p class="entry-card-review">@entry.Review</p>
+                    }
+                    <div class="entry-card-actions">
+                        <span class="badge status-completed">@entry.Status</span>
+                        @if (entry.Privacy != Privacy.Public)
+                        {
+                            <span class="badge badge-muted">@entry.Privacy</span>
+                        }
+                    </div>
+                </div>
+            </article>
+        }
+    </div>
+}

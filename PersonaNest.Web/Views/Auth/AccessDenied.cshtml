@@ -1,0 +1,13 @@
+@{
+    ViewData["Title"] = "Access denied";
+}
+
+<div class="page-shell">
+    <div class="empty-state" style="max-width:560px;margin:var(--sp-16) auto">
+        <div class="empty-state-title">You do not have access to this page</div>
+        <p style="margin-bottom:var(--sp-6)">
+            This area is limited to a role your account does not currently hold.
+        </p>
+        <a class="btn btn-secondary" asp-controller="Home" asp-action="Index">Back to home</a>
+    </div>
+</div>

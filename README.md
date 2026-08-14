@@ -6,9 +6,8 @@ A community media journal built with ASP.NET Core MVC. Users log their experienc
 games, books, anime, manga, TV and music as **Entries** against a shared, community-built
 **Media** catalogue.
 
-**Current state: Phase 2 complete — domain model, Identity, roles, seeding and the initial migration.**
-No repositories, no Unit of Work, no services, no DTOs, no feature controllers or views yet —
-those are Phase 3 and later.
+**Current state: Phase 5 complete — authentication, profiles, settings and the design system.**
+Media search, entries and the social features arrive in Phase 6 and later.
 
 ---
 
@@ -84,6 +83,43 @@ Migrations run entirely inside the Infrastructure project via
 `PersonaNest.Infrastructure`. Running the Web project in Development also applies pending
 migrations and seeds roles plus the three demo accounts automatically.
 
+## Per-phase workflow
+
+Each phase ships as a **complete snapshot** of the solution, not a delta. Extract it *over* the
+existing folder — it overwrites changed files and adds new ones, and never deletes anything.
+
+**Do not delete the project folder before extracting.** Your `Migrations/` folder is generated on
+your machine and is not in the zip; wiping the folder would lose it and desynchronise the
+database. Extracting over the top leaves it untouched.
+
+| Step | When |
+|---|---|
+| `dotnet user-secrets set …` | **once, ever** — secrets live outside the project folder and survive every extraction |
+| `dotnet build` | every phase |
+| `dotnet ef migrations add <Name>` | **only when the phase report says the model changed** — never re-run `InitialCreate` |
+| `dotnet ef database update` | only after adding a migration |
+| `dotnet run --project PersonaNest.Web` | whenever you want to check it |
+
+Phase 2 built the entire schema, so **Phases 3–14 require no migrations**. The next expected ones
+are Phase 8b (Genre / MediaGenre) and Phase 15 (Notification). Every phase report states
+explicitly whether a migration is needed.
+
+Because extraction never deletes, a phase that renames or removes a file would leave a stale
+orphan. Every phase report lists removed files. Phase 5 removed one:
+`PersonaNest.Web/Views/Shared/_Layout.cshtml.css` (the MVC template's scoped stylesheet, replaced by
+`wwwroot/css/site.css`) — **delete it manually** if it survives your extraction.
+
+Commit after each phase — `git diff` then shows exactly what changed.
+
+## Phase 13 optimisation candidates
+
+Recorded as they are found, deliberately not fixed mid-phase.
+
+| Item | Where | Note |
+|---|---|---|
+| Two-query page + count | `EntryService.GetMineAsync` | The filter predicate is evaluated twice — once for the page, once for the total. Correct but two round trips. Approved to leave as-is in Phase 4; revisit during the Phase 13 query-optimization pass. |
+
+
 ## Run
 
 ```bash
@@ -109,9 +145,9 @@ dotnet test
 |---|---|---|
 | 1 | Solution + four-layer architecture | **complete** |
 | 2 | Identity, entities, roles, seed, migrations | **complete** |
-| 3 | Repositories + Unit of Work | not started |
-| 4 | Services + DTOs + ViewModels + Manual Mapping | not started |
-| 5 | Profiles + Theme / accent customization | not started |
+| 3 | Repositories + Unit of Work | **complete** |
+| 4 | Services + DTOs + ViewModels + Manual Mapping | **complete** |
+| 5 | Profiles + Theme / accent customization | **complete** |
 | 6 | Media search + community media creation | not started |
 | 7 | Entries | not started |
 | 8 | Favorites + Collections + Tags | not started |

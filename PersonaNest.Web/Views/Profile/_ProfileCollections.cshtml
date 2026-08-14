@@ -1,0 +1,37 @@
+@model IReadOnlyList<CollectionCardDto>
+
+<h2 class="dashboard-section-title">Collections</h2>
+
+@if (Model.Count == 0)
+{
+    <div class="empty-state">
+        <div class="empty-state-title">No collections yet</div>
+        <p>Creating collections arrives in Phase 8.</p>
+    </div>
+}
+else
+{
+    <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
+        @foreach (var collection in Model)
+        {
+            <div class="card" style="padding:var(--sp-4)">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3)">
+                    <div>
+                        <div class="entry-card-title">@collection.Name</div>
+                        <div class="entry-card-meta">
+                            <span>@collection.ItemCount items</span>
+                            @if (collection.Privacy != Privacy.Public)
+                            {
+                                <span class="badge badge-muted">@collection.Privacy</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(collection.Description))
+                {
+                    <p class="entry-card-review" style="margin-top:var(--sp-2)">@collection.Description</p>
+                }
+            </div>
+        }
+    </div>
+}

@@ -1,0 +1,100 @@
+@model AddMediaViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Add Media";
+}
+
+<div class="page-shell" style="max-width:640px">
+    <h1 class="home-section-title" style="margin-bottom:var(--sp-2)">Add New Media</h1>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:var(--sp-6)">
+        The catalogue is community-built. Please search first — the item may already exist.
+    </p>
+
+    <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+    @if (Model.HasDuplicateWarning)
+    {
+        <div class="alert alert-warning" style="margin-bottom:var(--sp-5)">
+            <span class="alert-icon">&#9888;</span>
+            <div class="alert-body">
+                <div class="alert-title">This may already be in the database</div>
+                <p style="margin:var(--sp-2) 0">Review these before adding a duplicate:</p>
+                <div style="display:flex;flex-direction:column;gap:var(--sp-2)">
+                    @foreach (var duplicate in Model.PossibleDuplicates)
+                    {
+                        <a asp-controller="Media" asp-action="Details" asp-route-id="@duplicate.Id"
+                           target="_blank" style="color:var(--primary)">
+                            @duplicate.Title @(duplicate.ReleaseYear is not null ? $"({duplicate.ReleaseYear})" : "")
+                            &mdash; @duplicate.CategoryName
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <form asp-controller="Media" asp-action="Add" method="post" novalidate>
+        @if (Model.HasDuplicateWarning)
+        {
+            <input type="hidden" asp-for="Form.ConfirmedNotDuplicate" value="true" />
+        }
+
+        <div class="form-group">
+            <label class="form-label" asp-for="Form.Title"></label>
+            <input class="form-input" asp-for="Form.Title" placeholder="e.g. Spirited Away" />
+            <span asp-validation-for="Form.Title"></span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)">
+            <div class="form-group">
+                <label class="form-label" asp-for="Form.CategoryId"></label>
+                <select class="form-select" asp-for="Form.CategoryId"
+                        asp-items="@(new SelectList(Model.Categories, nameof(CategoryDto.Id), nameof(CategoryDto.Name)))">
+                    <option value="">Choose a category…</option>
+                </select>
+                <span asp-validation-for="Form.CategoryId"></span>
+            </div>
+            <div class="form-group">
+                <label class="form-label" asp-for="Form.ReleaseYear"></label>
+                <input class="form-input" asp-for="Form.ReleaseYear" placeholder="2001" />
+                <span asp-validation-for="Form.ReleaseYear"></span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" asp-for="Form.Creator"></label>
+            <input class="form-input" asp-for="Form.Creator" placeholder="Studio Ghibli" />
+            <span asp-validation-for="Form.Creator"></span>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" asp-for="Form.RuntimeMinutes"></label>
+            <input class="form-input" asp-for="Form.RuntimeMinutes" style="max-width:160px" />
+            <span asp-validation-for="Form.RuntimeMinutes"></span>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" asp-for="Form.Description"></label>
+            <textarea class="form-textarea" asp-for="Form.Description" style="min-height:100px"></textarea>
+            <span asp-validation-for="Form.Description"></span>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" asp-for="Form.OfficialCoverUrl"></label>
+            <input class="form-input" asp-for="Form.OfficialCoverUrl" placeholder="https://…" />
+            <div class="form-hint">A direct image URL. File uploads arrive in a later phase.</div>
+            <span asp-validation-for="Form.OfficialCoverUrl"></span>
+        </div>
+
+        <div class="flex gap-2">
+            <a class="btn btn-secondary" asp-controller="Search" asp-action="Index">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                @(Model.HasDuplicateWarning ? "Add anyway" : "Add Media")
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

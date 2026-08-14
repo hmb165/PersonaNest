@@ -1,0 +1,151 @@
+@model ProfileViewModel
+@{
+    ViewData["Title"] = Model.Header.DisplayName;
+    var tab = Model.ActiveTab;
+}
+
+@*
+    The per-user accent is applied as inline CSS custom properties on the profile container,
+    exactly as Design System v2's Implementation Notes specify. CSS custom properties cascade,
+    so every child using var(--primary) picks up this user's colour - and only inside their
+    profile.
+*@
+<div class="profile-container page-shell"
+     style="--primary: @Model.Header.AccentColor; --primary-dim: @Model.Header.AccentColorDark;">
+
+    <div class="profile-banner">
+        @if (!string.IsNullOrEmpty(Model.Header.BannerUrl))
+        {
+            <img src="@Model.Header.BannerUrl" alt="" />
+        }
+        <div class="profile-banner-overlay"></div>
+        @if (Model.Header.IsViewerSelf)
+        {
+            <div class="profile-banner-actions">
+                <a class="btn btn-secondary btn-sm" asp-controller="Settings" asp-action="Index">Edit Profile</a>
+            </div>
+        }
+    </div>
+
+    <header class="profile-header">
+        <div class="profile-avatar">
+            @if (!string.IsNullOrEmpty(Model.Header.ProfilePictureUrl))
+            {
+                <img src="@Model.Header.ProfilePictureUrl" alt="@Model.Header.DisplayName" />
+            }
+            else
+            {
+                <span class="avatar-fallback">@Model.Header.DisplayName.FirstOrDefault()</span>
+            }
+        </div>
+
+        <div class="profile-info">
+            <h1 class="profile-username">@Model.Header.DisplayName</h1>
+            <div class="profile-handle">&#64;@Model.Header.UserName</div>
+            @if (!string.IsNullOrWhiteSpace(Model.Header.Bio))
+            {
+                <p class="profile-bio">@Model.Header.Bio</p>
+            }
+        </div>
+
+        <div class="profile-actions">
+            @if (Model.Header.IsViewerSelf)
+            {
+                <a class="btn btn-secondary" asp-controller="Settings" asp-action="Index">Settings</a>
+            }
+            else if (User.IsSignedIn())
+            {
+                @* Follow is wired up in Phase 9, together with the rest of the social features. *@
+                <button class="btn btn-primary" disabled title="Available in Phase 9">
+                    @(Model.Header.IsFollowedByViewer ? "Following" : "Follow")
+                </button>
+            }
+        </div>
+    </header>
+
+    <div class="profile-stats">
+        <div class="profile-stat">
+            <div class="profile-stat-val">@Model.Stats.EntryCount</div>
+            <div class="profile-stat-label">Entries</div>
+        </div>
+        <div class="profile-stat">
+            <div class="profile-stat-val">@Model.Stats.FollowingCount</div>
+            <div class="profile-stat-label">Following</div>
+        </div>
+        <div class="profile-stat">
+            <div class="profile-stat-val">@Model.Stats.FollowerCount</div>
+            <div class="profile-stat-label">Followers</div>
+        </div>
+        <div class="profile-stat">
+            <div class="profile-stat-val">@Model.Stats.CollectionCount</div>
+            <div class="profile-stat-label">Collections</div>
+        </div>
+        <div class="profile-stat">
+            <div class="profile-stat-val" style="color:var(--warning)">
+                @(Model.Stats.AverageRating?.ToString("0.0") ?? "&mdash;")
+            </div>
+            <div class="profile-stat-label">Avg Rating</div>
+        </div>
+    </div>
+
+    <nav class="profile-tabs">
+        @foreach (var name in new[] { "Entries", "Collections", "Favorites", "Taste Profile" })
+        {
+            <a class="profile-tab @(tab == name ? "active" : null)"
+               asp-action="Index" asp-route-userName="@Model.Header.UserName" asp-route-tab="@name">@name</a>
+        }
+    </nav>
+
+    <div class="profile-body">
+        <div class="profile-grid">
+            <div>
+                @switch (tab)
+                {
+                    case "Collections":
+                        <partial name="_ProfileCollections" model="Model.Collections" />
+                        break;
+                    case "Favorites":
+                        <partial name="_ProfileFavorites" model="Model.Favorites" />
+                        break;
+                    case "Taste Profile":
+                        <partial name="_TasteProfile" model="Model.TasteProfile" />
+                        break;
+                    default:
+                        <partial name="_ProfileEntries" model="Model.RecentEntries" />
+                        break;
+                }
+            </div>
+
+            <aside>
+                <div class="card" style="padding:var(--sp-5);margin-bottom:var(--sp-4)">
+                    <div class="dashboard-section-title">Taste Profile</div>
+                    <partial name="_TasteProfile" model="Model.TasteProfile" />
+                </div>
+
+                <div class="card" style="padding:var(--sp-5)">
+                    <div class="dashboard-section-title">Stats</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)">
+                        <div>
+                            <div class="stat-card-value" style="color:var(--primary)">@Model.Stats.EntryCount</div>
+                            <div class="stat-card-label">Total Entries</div>
+                        </div>
+                        <div>
+                            <div class="stat-card-value" style="color:var(--warning)">
+                                @(Model.Stats.AverageRating?.ToString("0.0") ?? "&mdash;")
+                            </div>
+                            <div class="stat-card-label">Avg Rating</div>
+                        </div>
+                        <div>
+                            <div class="stat-card-value" style="color:var(--success)">@Model.Stats.CollectionCount</div>
+                            <div class="stat-card-label">Collections</div>
+                        </div>
+                        <div>
+                            <div class="stat-card-value" style="color:var(--accent)">@Model.Stats.ReviewCount</div>
+                            <div class="stat-card-label">Reviews</div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</div>

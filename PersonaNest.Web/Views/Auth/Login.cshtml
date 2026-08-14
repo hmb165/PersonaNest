@@ -1,0 +1,65 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Log in";
+    Layout = "_AuthLayout";
+}
+
+<div class="auth-shell">
+    <div class="auth-panel">
+        <a class="navbar-brand" asp-controller="Home" asp-action="Index" style="margin-bottom:var(--sp-10)">
+            <div class="navbar-brand-mark">P</div>PersonaNest
+        </a>
+
+        <h1 style="font-family:var(--font-display);font-size:30px;font-weight:600;margin-bottom:var(--sp-2)">
+            Welcome back.
+        </h1>
+        <p style="color:var(--text-secondary);margin-bottom:var(--sp-8)">
+            Pick up where you left off.
+        </p>
+
+        <form asp-controller="Auth" asp-action="Login" method="post" novalidate>
+            <input type="hidden" asp-for="ReturnUrl" />
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+            <div class="form-group">
+                <label class="form-label" asp-for="Form.Identifier"></label>
+                <input class="form-input" asp-for="Form.Identifier" autocomplete="username" />
+                <span asp-validation-for="Form.Identifier"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" asp-for="Form.Password"></label>
+                <input class="form-input" asp-for="Form.Password" autocomplete="current-password" />
+                <span asp-validation-for="Form.Password"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-check-label" style="display:flex;align-items:center;gap:var(--sp-2);cursor:pointer">
+                    <input asp-for="Form.RememberMe" type="checkbox" />
+                    <span>@Html.DisplayNameFor(m => m.Form.RememberMe)</span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Log in</button>
+        </form>
+
+        <p style="margin-top:var(--sp-6);color:var(--text-secondary);font-size:14px">
+            New to PersonaNest?
+            <a asp-controller="Auth" asp-action="Register" asp-route-returnUrl="@Model.ReturnUrl"
+               style="color:var(--primary)">Create an account</a>
+        </p>
+    </div>
+
+    <aside class="auth-visual" aria-hidden="true">
+        <div>
+            <p class="auth-visual-quote">
+                &ldquo;Chasing the feeling of the first time, every time.&rdquo;
+            </p>
+            <div class="auth-visual-attrib">PersonaNest</div>
+        </div>
+    </aside>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

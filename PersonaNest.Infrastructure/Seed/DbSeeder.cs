@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using PersonaNest.Domain.Constants;
 using PersonaNest.Domain.Entities;
 using PersonaNest.Infrastructure.Data;
 
@@ -19,18 +20,16 @@ namespace PersonaNest.Infrastructure.Seed;
 /// </summary>
 public static class DbSeeder
 {
-    public const string RoleUser = "User";
-    public const string RoleModerator = "Moderator";
-    public const string RoleAdmin = "Admin";
-
-    public static readonly string[] AllRoles = { RoleUser, RoleModerator, RoleAdmin };
+    // Role names live in PersonaNest.Domain.Constants.Roles so the seeder, the services and the
+    // [Authorize(Roles = ...)] attributes all name the same strings.
+    public static readonly string[] AllRoles = Roles.All;
 
     private static readonly (string Key, string UserName, string Email, string DisplayName, string Role)[]
         DevAccounts =
         {
-            ("Seed:AdminPassword",     "admin",     "admin@personanest.local",     "Site Admin",      RoleAdmin),
-            ("Seed:ModeratorPassword", "moderator", "moderator@personanest.local", "Community Mod",   RoleModerator),
-            ("Seed:UserPassword",      "demo_user", "demo@personanest.local",      "Demo User",       RoleUser)
+            ("Seed:AdminPassword",     "admin",     "admin@personanest.local",     "Site Admin",      Roles.Admin),
+            ("Seed:ModeratorPassword", "moderator", "moderator@personanest.local", "Community Mod",   Roles.Moderator),
+            ("Seed:UserPassword",      "demo_user", "demo@personanest.local",      "Demo User",       Roles.User)
         };
 
     public static async Task SeedAsync(

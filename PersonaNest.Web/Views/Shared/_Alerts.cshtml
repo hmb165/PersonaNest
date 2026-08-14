@@ -1,0 +1,30 @@
+@* Flash messages set by controllers through TempData. Uses the design system's alert variants. *@
+@if (TempData["Success"] is string success && !string.IsNullOrWhiteSpace(success))
+{
+    <div class="page-shell" style="padding-bottom:0">
+        <div class="alert alert-success" role="status">
+            <span class="alert-icon">&#10003;</span>
+            <div class="alert-body">@success</div>
+        </div>
+    </div>
+}
+
+@if (TempData["Error"] is string error && !string.IsNullOrWhiteSpace(error))
+{
+    <div class="page-shell" style="padding-bottom:0">
+        <div class="alert alert-danger" role="alert">
+            <span class="alert-icon">&#10005;</span>
+            <div class="alert-body">@error</div>
+        </div>
+    </div>
+}
+
+@if (TempData["Info"] is string info && !string.IsNullOrWhiteSpace(info))
+{
+    <div class="page-shell" style="padding-bottom:0">
+        <div class="alert alert-info" role="status">
+            <span class="alert-icon">&#8505;</span>
+            <div class="alert-body">@info</div>
+        </div>
+    </div>
+}

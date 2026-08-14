@@ -1,0 +1,39 @@
+@* Nullable: the profile page passes null until the Phase 12 background service runs. *@
+@model TasteProfileDto?
+
+@if (Model is null)
+{
+    <p style="font-size:13px;color:var(--text-muted)">
+        No taste profile yet. It is computed from real entry data by the background service,
+        which arrives in Phase 12.
+    </p>
+}
+else
+{
+    <div class="taste-profile">
+        @foreach (var slice in Model.Categories)
+        {
+            <div>
+                <div class="taste-bar-label">
+                    <span>@slice.Icon @slice.CategoryName</span>
+                    <span>@slice.Percentage.ToString("0")%</span>
+                </div>
+                <div class="taste-bar-track">
+                    <div class="taste-bar-fill" style="width:@(slice.Percentage.ToString("0"))%"></div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (Model.TopTags.Count > 0)
+    {
+        <div class="divider" style="margin:var(--sp-5) 0"></div>
+        <div class="dashboard-section-title" style="font-size:14px">Top Tags</div>
+        <div style="display:flex;flex-wrap:wrap;gap:var(--sp-2)">
+            @foreach (var tag in Model.TopTags)
+            {
+                <span class="tag">@tag.Name</span>
+            }
+        </div>
+    }
+}

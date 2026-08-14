@@ -1,0 +1,170 @@
+@model MediaDetailsViewModel
+@{
+    ViewData["Title"] = Model.Media.Title;
+    var media = Model.Media;
+
+    // The CSS placeholder is a fixed stock photo; when the media has a real cover, replicate the
+    // same darkening gradient over that cover instead so the title text stays legible.
+    var heroBgStyle = string.IsNullOrEmpty(media.OfficialCoverUrl)
+        ? (string?)null
+        : $"background-image:linear-gradient(90deg, rgba(9,9,15,0) 0%, rgba(9,9,15,0.95) 60%), url('{media.OfficialCoverUrl}')";
+}
+
+<div class="media-detail-hero">
+    <div class="media-detail-bg" style="@heroBgStyle"></div>
+    <div class="media-detail-cover">
+        @if (!string.IsNullOrEmpty(media.OfficialCoverUrl))
+        {
+            <img src="@media.OfficialCoverUrl" alt="@media.Title cover" />
+        }
+    </div>
+    <div class="media-detail-info">
+        <div class="media-detail-category">
+            <span class="badge badge-primary">@media.CategoryName</span>
+        </div>
+        <div class="media-detail-title">@media.Title</div>
+        @if (!string.IsNullOrEmpty(media.Creator))
+        {
+            <div class="media-detail-subtitle">@media.Creator</div>
+        }
+        <div class="media-detail-meta">
+            @if (media.ReleaseYear is not null)
+            {
+                <span>@media.ReleaseYear</span>
+            }
+            @if (media.RuntimeMinutes is not null)
+            {
+                <span>@media.RuntimeMinutes min</span>
+            }
+        </div>
+
+        @if (media.AverageRating is not null)
+        {
+            <div class="media-detail-rating">
+                <div class="media-detail-rating-val">@media.AverageRating.Value.ToString("0.0")</div>
+                <div>
+                    <div style="color:var(--warning);font-size:18px">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+                    <div class="media-detail-rating-sub">avg from @media.RatingCount entr@(media.RatingCount == 1 ? "y" : "ies")</div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="media-detail-rating-sub" style="margin-bottom:var(--sp-5)">Not yet rated</div>
+        }
+
+        <div class="media-detail-actions">
+            @if (media.ViewerEntryId is not null)
+            {
+                <span class="btn btn-secondary" style="opacity:.6;cursor:default" title="Editing entries arrives in Phase 7">
+                    &#10003; You've logged this
+                </span>
+            }
+            else
+            {
+                <span class="btn btn-primary" style="opacity:.6;cursor:default" title="Logging entries arrives in Phase 7">
+                    + Log Entry
+                </span>
+            }
+            <span class="btn btn-accent" style="opacity:.6;cursor:default" title="Favorites arrive in Phase 8">
+                &#9825; Favorite
+            </span>
+            <span class="btn btn-secondary" style="opacity:.6;cursor:default" title="Collections arrive in Phase 8">
+                + Add to Collection
+            </span>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(media.Description))
+{
+    <div style="padding:var(--sp-6) var(--sp-10);border-bottom:1px solid var(--border)">
+        <div style="font-size:14px;color:var(--text-secondary);line-height:1.7;max-width:700px">
+            @media.Description
+        </div>
+    </div>
+}
+
+<div style="padding:var(--sp-6) var(--sp-10)">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:var(--sp-4)">
+        <h2 class="home-section-title" style="margin:0">Community Entries</h2>
+        <span class="mono" style="font-size:12px;color:var(--text-muted)">
+            Added by @media.AddedByUserName &middot; @media.CreatedAt.ToString("MMM yyyy")
+        </span>
+    </div>
+
+    @if (Model.CommunityEntries.Count > 0)
+    {
+        <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
+            @foreach (var entry in Model.CommunityEntries)
+            {
+                var (statusClass, statusLabel) = entry.Status switch
+                {
+                    PersonaNest.Domain.Enums.EntryStatus.InProgress => ("status-watching", "In Progress"),
+                    PersonaNest.Domain.Enums.EntryStatus.Completed => ("status-completed", "Completed"),
+                    PersonaNest.Domain.Enums.EntryStatus.Planning => ("status-planning", "Planning"),
+                    PersonaNest.Domain.Enums.EntryStatus.Dropped => ("status-dropped", "Dropped"),
+                    PersonaNest.Domain.Enums.EntryStatus.Paused => ("status-paused", "Paused"),
+                    _ => ("badge-muted", entry.Status.ToString())
+                };
+
+                <div class="card entry-card">
+                    <div class="entry-card-cover">
+                        @if (!string.IsNullOrEmpty(entry.CoverUrl))
+                        {
+                            <img src="@entry.CoverUrl" alt="@entry.AuthorDisplayName's cover" />
+                        }
+                    </div>
+                    <div class="entry-card-body">
+                        <div style="display:flex;align-items:center;gap:var(--sp-2);margin-bottom:var(--sp-2)">
+                            <div class="avatar" style="width:24px;height:24px">
+                                @if (!string.IsNullOrEmpty(entry.AuthorProfilePictureUrl))
+                                {
+                                    <img src="@entry.AuthorProfilePictureUrl" alt="@entry.AuthorDisplayName" />
+                                }
+                                else
+                                {
+                                    <span class="avatar-fallback">@entry.AuthorDisplayName.FirstOrDefault()</span>
+                                }
+                            </div>
+                            <strong style="color:var(--primary)">@entry.AuthorDisplayName</strong>
+                            @if (entry.Rating is not null)
+                            {
+                                <span style="color:var(--warning);font-size:14px">&#9733; @entry.Rating.Value.ToString("0.0")</span>
+                            }
+                            <span class="badge @statusClass" style="padding:2px 8px;font-size:10px">@statusLabel</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(entry.Review))
+                        {
+                            <div class="entry-card-review">@entry.Review</div>
+                        }
+                        <div class="entry-card-actions">
+                            <span class="text-muted" style="font-size:12px">&#9825; @entry.LikeCount</span>
+                            <span class="text-muted" style="font-size:12px">&#128172; @entry.CommentCount</span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (Model.CommunityEntryTotal > Model.CommunityEntries.Count)
+        {
+            <div class="flex gap-2" style="justify-content:center;margin-top:var(--sp-6)">
+                @if (Model.Page > 1)
+                {
+                    <a class="btn btn-secondary btn-sm" asp-controller="Media" asp-action="Details"
+                       asp-route-id="@media.Id" asp-route-page="@(Model.Page - 1)">&larr; Previous</a>
+                }
+                <a class="btn btn-secondary btn-sm" asp-controller="Media" asp-action="Details"
+                   asp-route-id="@media.Id" asp-route-page="@(Model.Page + 1)">Next &rarr;</a>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <div class="empty-state-title">No entries yet</div>
+            <p>Logging entries arrives in Phase 7 — be the first to share your take.</p>
+        </div>
+    }
+</div>
