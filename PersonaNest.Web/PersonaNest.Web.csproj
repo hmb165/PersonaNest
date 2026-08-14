@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>personanest-web-secrets</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PersonaNest.Domain\PersonaNest.Domain.csproj" />
+    <ProjectReference Include="..\PersonaNest.Services\PersonaNest.Services.csproj" />
+  </ItemGroup>
+
+</Project>
