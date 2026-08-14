@@ -226,7 +226,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
    Rating scale is 0.5-10.0 in 0.5 steps -> 1 star = 2.0 points. */
 .star.half { color: var(--text-muted); }
 .star.half::before {
-  content: '°5';
+  content: '\2605';
   position: absolute;
   left: 0; top: 0;
   width: 50%;

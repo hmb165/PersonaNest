@@ -23,6 +23,23 @@ public static class MediaMappings
     };
 
     /// <summary>
+    /// Detail -&gt; card reshape, for pages that already loaded the detail DTO and just need the
+    /// smaller shape for a sidebar preview (the Create/Edit Entry form).
+    /// </summary>
+    public static MediaCardDto AsCardDto(this MediaDetailDto detail) => new()
+    {
+        Id = detail.Id,
+        Title = detail.Title,
+        OfficialCoverUrl = detail.OfficialCoverUrl,
+        Creator = detail.Creator,
+        ReleaseYear = detail.ReleaseYear,
+        CategoryName = detail.CategoryName,
+        CategoryColorToken = detail.CategoryColorToken,
+        AverageRating = detail.AverageRating,
+        EntryCount = detail.EntryCount
+    };
+
+    /// <summary>
     /// Media details. Parameterised by viewer, because two fields are viewer-relative; pass null
     /// for an anonymous visitor.
     /// </summary>

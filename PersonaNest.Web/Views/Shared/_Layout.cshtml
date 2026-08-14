@@ -39,6 +39,8 @@
         @if (SignInManager.IsSignedIn(User))
         {
             <a class="btn btn-ghost btn-sm d-none d-md-inline-flex"
+               asp-controller="Entries" asp-action="Index">My Entries</a>
+            <a class="btn btn-ghost btn-sm d-none d-md-inline-flex"
                asp-controller="Profile" asp-action="Index"
                asp-route-userName="@User.Identity!.Name">My Profile</a>
             <a class="btn btn-ghost btn-sm d-none d-md-inline-flex"

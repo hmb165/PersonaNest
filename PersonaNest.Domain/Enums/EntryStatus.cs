@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace PersonaNest.Domain.Enums;
 
 /// <summary>
@@ -8,7 +10,10 @@ namespace PersonaNest.Domain.Enums;
 public enum EntryStatus
 {
     Planning = 0,
+
+    [Display(Name = "In Progress")]
     InProgress = 1,
+
     Completed = 2,
     Paused = 3,
     Dropped = 4

@@ -35,7 +35,14 @@ public static class DependencyInjection
             options.UseSqlServer(connectionString, sql =>
             {
                 sql.MigrationsAssembly(typeof(PersonaNestDbContext).Assembly.GetName().Name);
-                sql.EnableRetryOnFailure();
+
+                // Deliberately no EnableRetryOnFailure(): EF Core's retrying execution strategy
+                // refuses to run inside a user-initiated transaction ("does not support
+                // user-initiated transactions"), and IUnitOfWork.BeginTransactionAsync (§9,
+                // required) is exactly that. The two are mutually exclusive; the Unit of Work is
+                // the required piece, so the transient-fault retry wrapper loses. Found when
+                // EntryService.CreateAsync (Phase 7) became the first caller to actually open a
+                // transaction.
             }));
 
         services

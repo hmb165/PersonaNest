@@ -56,15 +56,21 @@
         <div class="media-detail-actions">
             @if (media.ViewerEntryId is not null)
             {
-                <span class="btn btn-secondary" style="opacity:.6;cursor:default" title="Editing entries arrives in Phase 7">
+                <a class="btn btn-secondary" asp-controller="Entries" asp-action="Edit" asp-route-id="@media.ViewerEntryId">
                     &#10003; You've logged this
-                </span>
+                </a>
+            }
+            else if (User.IsSignedIn())
+            {
+                <a class="btn btn-primary" asp-controller="Entries" asp-action="Create" asp-route-mediaId="@media.Id">
+                    + Log Entry
+                </a>
             }
             else
             {
-                <span class="btn btn-primary" style="opacity:.6;cursor:default" title="Logging entries arrives in Phase 7">
+                <a class="btn btn-primary" asp-controller="Auth" asp-action="Login">
                     + Log Entry
-                </span>
+                </a>
             }
             <span class="btn btn-accent" style="opacity:.6;cursor:default" title="Favorites arrive in Phase 8">
                 &#9825; Favorite
@@ -98,17 +104,8 @@
         <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
             @foreach (var entry in Model.CommunityEntries)
             {
-                var (statusClass, statusLabel) = entry.Status switch
-                {
-                    PersonaNest.Domain.Enums.EntryStatus.InProgress => ("status-watching", "In Progress"),
-                    PersonaNest.Domain.Enums.EntryStatus.Completed => ("status-completed", "Completed"),
-                    PersonaNest.Domain.Enums.EntryStatus.Planning => ("status-planning", "Planning"),
-                    PersonaNest.Domain.Enums.EntryStatus.Dropped => ("status-dropped", "Dropped"),
-                    PersonaNest.Domain.Enums.EntryStatus.Paused => ("status-paused", "Paused"),
-                    _ => ("badge-muted", entry.Status.ToString())
-                };
-
-                <div class="card entry-card">
+                <a class="card entry-card" style="text-decoration:none;color:inherit"
+                   asp-controller="Entries" asp-action="Details" asp-route-id="@entry.Id">
                     <div class="entry-card-cover">
                         @if (!string.IsNullOrEmpty(entry.CoverUrl))
                         {
@@ -132,7 +129,7 @@
                             {
                                 <span style="color:var(--warning);font-size:14px">&#9733; @entry.Rating.Value.ToString("0.0")</span>
                             }
-                            <span class="badge @statusClass" style="padding:2px 8px;font-size:10px">@statusLabel</span>
+                            <span class="badge @entry.Status.ToBadgeClass()" style="padding:2px 8px;font-size:10px">@entry.Status.ToDisplayLabel()</span>
                         </div>
                         @if (!string.IsNullOrEmpty(entry.Review))
                         {
@@ -143,7 +140,7 @@
                             <span class="text-muted" style="font-size:12px">&#128172; @entry.CommentCount</span>
                         </div>
                     </div>
-                </div>
+                </a>
             }
         </div>
 
@@ -164,7 +161,7 @@
     {
         <div class="empty-state">
             <div class="empty-state-title">No entries yet</div>
-            <p>Logging entries arrives in Phase 7 — be the first to share your take.</p>
+            <p>Be the first to share your take.</p>
         </div>
     }
 </div>

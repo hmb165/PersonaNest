@@ -41,8 +41,13 @@ public sealed class CreateEntryRequest
     [Display(Name = "Date")]
     public DateTime? ConsumedAt { get; set; }
 
-    /// <summary>Tag ids selected on the form (§21).</summary>
-    public IReadOnlyList<int> TagIds { get; set; } = Array.Empty<int>();
+    /// <summary>
+    /// Tag ids selected on the form (§21). Concrete <see cref="List{T}"/>, not
+    /// <c>IReadOnlyList&lt;int&gt;</c> - the checkbox group posts repeated "TagIds" values, and
+    /// ASP.NET Core's model binder cannot construct an interface-typed collection property from
+    /// that shape; it silently leaves it at the empty default instead of failing loudly.
+    /// </summary>
+    public List<int> TagIds { get; set; } = new();
 }
 
 /// <summary>The Edit Entry form. Media cannot change - that would be a different entry.</summary>
@@ -72,7 +77,7 @@ public sealed class UpdateEntryRequest
     [DataType(DataType.Date)]
     public DateTime? ConsumedAt { get; set; }
 
-    public IReadOnlyList<int> TagIds { get; set; } = Array.Empty<int>();
+    public List<int> TagIds { get; set; } = new();
 }
 
 /// <summary>Filters on the My Entries page.</summary>

@@ -1,0 +1,136 @@
+@model EntryDetailsViewModel
+@{
+    var entry = Model.Entry;
+    ViewData["Title"] = $"{entry.MediaTitle} · {entry.AuthorDisplayName}";
+}
+
+<div style="display:grid;grid-template-columns:1fr 280px;gap:var(--sp-6);padding:var(--sp-6) var(--sp-8)">
+    <div>
+        <div class="flex gap-3" style="align-items:flex-start;margin-bottom:var(--sp-6)">
+            <div style="width:120px;height:180px;border-radius:var(--r-lg);overflow:hidden;flex-shrink:0;box-shadow:var(--shadow-lg);background:var(--bg-overlay)">
+                @{
+                    var coverUrl = entry.PersonalCoverUrl ?? entry.MediaOfficialCoverUrl;
+                }
+                @if (!string.IsNullOrEmpty(coverUrl))
+                {
+                    <img src="@coverUrl" alt="Cover" style="width:100%;height:100%;object-fit:cover" />
+                }
+            </div>
+            <div>
+                <div style="font-size:12px;color:var(--text-muted);font-family:var(--font-mono);margin-bottom:var(--sp-2)">Entry by</div>
+                <div class="flex gap-2" style="margin-bottom:var(--sp-3)">
+                    <div class="avatar" style="width:28px;height:28px">
+                        @if (!string.IsNullOrEmpty(entry.AuthorProfilePictureUrl))
+                        {
+                            <img src="@entry.AuthorProfilePictureUrl" alt="@entry.AuthorDisplayName" />
+                        }
+                        else
+                        {
+                            <span class="avatar-fallback">@entry.AuthorDisplayName.FirstOrDefault()</span>
+                        }
+                    </div>
+                    <a style="color:var(--primary);text-decoration:none;font-weight:600"
+                       asp-controller="Profile" asp-action="Index" asp-route-userName="@entry.AuthorUserName">
+                        @entry.AuthorDisplayName
+                    </a>
+                </div>
+                <div style="font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--text-primary);letter-spacing:-0.02em;margin-bottom:var(--sp-1)">
+                    <a asp-controller="Media" asp-action="Details" asp-route-id="@entry.MediaId"
+                       style="color:inherit;text-decoration:none">@entry.MediaTitle</a>
+                </div>
+                <div style="font-size:13px;color:var(--text-muted);font-family:var(--font-mono);margin-bottom:var(--sp-3)">
+                    @entry.CategoryName
+                    @(entry.MediaReleaseYear is not null ? $"· {entry.MediaReleaseYear}" : "")
+                    · Logged @entry.CreatedAt.ToString("MMM d, yyyy")
+                </div>
+                @if (entry.Rating is not null)
+                {
+                    <div style="color:var(--warning);font-size:20px;margin-bottom:var(--sp-2)">
+                        &#9733;&#9733;&#9733;&#9733;&#9733;
+                        <span style="font-family:var(--font-mono);font-size:14px;color:var(--text-muted)">@entry.Rating.Value.ToString("0.0") / 10</span>
+                    </div>
+                }
+                <div style="display:flex;flex-wrap:wrap;gap:var(--sp-2)">
+                    <span class="badge @entry.Status.ToBadgeClass()">@entry.Status.ToDisplayLabel()</span>
+                    <span class="badge badge-muted" style="font-size:10px">@entry.Privacy</span>
+                </div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(entry.Review))
+        {
+            <div style="font-size:15px;color:var(--text-secondary);line-height:1.75;margin-bottom:var(--sp-5)">
+                @entry.Review
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(entry.FavoriteMoment))
+        {
+            <div style="background:var(--bg-card);border:1px solid var(--border);border-left:3px solid var(--primary);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-5);margin-bottom:var(--sp-5)">
+                <div style="font-size:11px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:var(--sp-2)">Favorite Moment</div>
+                <div style="font-size:14px;color:var(--text-secondary);font-style:italic">"@entry.FavoriteMoment"</div>
+            </div>
+        }
+
+        @if (entry.Tags.Count > 0)
+        {
+            <div style="display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-bottom:var(--sp-6)">
+                @foreach (var tag in entry.Tags)
+                {
+                    <span class="tag">@tag.Name</span>
+                }
+            </div>
+        }
+
+        <div class="divider"></div>
+        <div style="font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--text-primary);margin-bottom:var(--sp-5)">
+            Comments <span style="font-size:14px;color:var(--text-muted);font-family:var(--font-mono)">(@entry.CommentCount)</span>
+        </div>
+
+        <div class="empty-state">
+            <div class="empty-state-title">Comments arrive in Phase 9</div>
+            <p>Come back once the social layer is built to discuss this entry.</p>
+        </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:var(--sp-4)">
+        <div class="card" style="padding:var(--sp-5)">
+            <div class="dashboard-section-title">Actions</div>
+            <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
+                @if (entry.ViewerIsAuthor)
+                {
+                    <a class="btn btn-secondary" style="width:100%" asp-controller="Entries" asp-action="Edit"
+                       asp-route-id="@entry.Id">Edit Entry</a>
+                    <form asp-controller="Entries" asp-action="Delete" asp-route-id="@entry.Id" method="post"
+                          onsubmit="return confirm('Delete this entry? This cannot be undone.');">
+                        <button type="submit" class="btn btn-danger" style="width:100%">Delete Entry</button>
+                    </form>
+                }
+                else
+                {
+                    <span class="btn btn-accent" style="width:100%;opacity:.6;cursor:default" title="Likes arrive in Phase 9">
+                        &#9825; Like Entry
+                    </span>
+                }
+                <span class="btn btn-secondary" style="width:100%;opacity:.6;cursor:default" title="Collections arrive in Phase 8">
+                    + Add to Collection
+                </span>
+            </div>
+        </div>
+        <div class="card" style="padding:var(--sp-5)">
+            <div class="dashboard-section-title">About the Media</div>
+            <div style="aspect-ratio:2/3;border-radius:var(--r-md);overflow:hidden;margin-bottom:var(--sp-3);background:var(--bg-overlay)">
+                @if (!string.IsNullOrEmpty(entry.MediaOfficialCoverUrl))
+                {
+                    <img src="@entry.MediaOfficialCoverUrl" alt="@entry.MediaTitle" style="width:100%;height:100%;object-fit:cover" />
+                }
+            </div>
+            <div style="font-weight:600;color:var(--text-primary);margin-bottom:2px">@entry.MediaTitle</div>
+            <div style="font-size:12px;color:var(--text-muted);font-family:var(--font-mono);margin-bottom:var(--sp-3)">
+                @entry.MediaEntryCount community entr@(entry.MediaEntryCount == 1 ? "y" : "ies")
+            </div>
+            <a style="font-size:13px;color:var(--primary)" asp-controller="Media" asp-action="Details"
+               asp-route-id="@entry.MediaId">View media page &rarr;</a>
+        </div>
+    </div>
+</div>

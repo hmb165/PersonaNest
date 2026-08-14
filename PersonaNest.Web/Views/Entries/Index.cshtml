@@ -1,0 +1,130 @@
+@model MyEntriesViewModel
+@{
+    ViewData["Title"] = "My Entries";
+    ViewData["Nav"] = "Entries";
+}
+
+<div class="page-shell">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-5);flex-wrap:wrap;gap:var(--sp-3)">
+        <div style="font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--text-primary)">
+            My Entries <span style="font-size:16px;color:var(--text-muted);font-family:var(--font-mono)">(@Model.TotalCount)</span>
+        </div>
+        <a class="btn btn-primary btn-sm" asp-controller="Search" asp-action="Index">+ Log Entry</a>
+    </div>
+
+    <form asp-controller="Entries" asp-action="Index" method="get" class="flex gap-3" style="margin-bottom:var(--sp-5);flex-wrap:wrap">
+        <select class="form-select" name="CategoryId" style="width:170px;padding:7px 32px 7px 12px" onchange="this.form.submit()">
+            <option value="">All Categories</option>
+            @foreach (var category in Model.Categories)
+            {
+                <option value="@category.Id" selected="@(Model.Filter.CategoryId == category.Id)">@category.Name</option>
+            }
+        </select>
+        <select class="form-select" name="Status" style="width:150px;padding:7px 32px 7px 12px" onchange="this.form.submit()">
+            <option value="">All Statuses</option>
+            @foreach (EntryStatus status in Enum.GetValues<EntryStatus>())
+            {
+                <option value="@status" selected="@(Model.Filter.Status == status)">@status.ToDisplayLabel()</option>
+            }
+        </select>
+        <noscript><button type="submit" class="btn btn-secondary btn-sm">Filter</button></noscript>
+    </form>
+
+    @if (Model.Entries.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="empty-state-title">No entries match these filters</div>
+            <p>
+                @if (Model.TotalCount == 0)
+                {
+                    <text>You haven't logged anything yet. <a asp-controller="Search" asp-action="Index">Find something to log &rarr;</a></text>
+                }
+                else
+                {
+                    <text>Try clearing a filter.</text>
+                }
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Media</th><th>Category</th><th>Status</th><th>Rating</th>
+                        <th>Date</th><th>Privacy</th><th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var entry in Model.Entries)
+                    {
+                        <tr>
+                            <td>
+                                <a class="flex gap-3" style="text-decoration:none;color:inherit"
+                                   asp-controller="Entries" asp-action="Details" asp-route-id="@entry.Id">
+                                    <div style="width:36px;height:52px;border-radius:var(--r-sm);overflow:hidden;background:var(--bg-overlay);flex-shrink:0">
+                                        @if (!string.IsNullOrEmpty(entry.CoverUrl))
+                                        {
+                                            <img src="@entry.CoverUrl" alt="@entry.MediaTitle" style="width:100%;height:100%;object-fit:cover" />
+                                        }
+                                    </div>
+                                    <strong>@entry.MediaTitle</strong>
+                                </a>
+                            </td>
+                            <td><span class="badge badge-primary" style="font-size:10px">@entry.CategoryName</span></td>
+                            <td><span class="badge @entry.Status.ToBadgeClass()">@entry.Status.ToDisplayLabel()</span></td>
+                            <td>
+                                @if (entry.Rating is not null)
+                                {
+                                    <span style="color:var(--warning);font-family:var(--font-mono)">&#9733; @entry.Rating.Value.ToString("0.0")</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">&mdash;</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="mono" style="font-size:12px">
+                                    @((entry.ConsumedAt ?? entry.CreatedAt).ToString("yyyy-MM-dd"))
+                                </span>
+                            </td>
+                            <td><span class="badge badge-muted" style="font-size:10px">@entry.Privacy</span></td>
+                            <td>
+                                <div class="flex gap-2">
+                                    <a class="btn btn-ghost btn-sm" asp-controller="Entries" asp-action="Edit"
+                                       asp-route-id="@entry.Id">Edit</a>
+                                    <form asp-controller="Entries" asp-action="Delete" asp-route-id="@entry.Id"
+                                          method="post" onsubmit="return confirm('Delete your entry for @entry.MediaTitle? This cannot be undone.');">
+                                        <button type="submit" class="btn btn-danger btn-sm">&#10005;</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <div class="flex gap-2" style="justify-content:center;margin-top:var(--sp-6)">
+                @if (Model.Page > 1)
+                {
+                    <a class="btn btn-secondary btn-sm" asp-controller="Entries" asp-action="Index"
+                       asp-route-CategoryId="@Model.Filter.CategoryId" asp-route-Status="@Model.Filter.Status"
+                       asp-route-Page="@(Model.Page - 1)">&larr; Previous</a>
+                }
+                <span class="mono" style="align-self:center;color:var(--text-muted);font-size:13px">
+                    Page @Model.Page of @Model.TotalPages
+                </span>
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a class="btn btn-secondary btn-sm" asp-controller="Entries" asp-action="Index"
+                       asp-route-CategoryId="@Model.Filter.CategoryId" asp-route-Status="@Model.Filter.Status"
+                       asp-route-Page="@(Model.Page + 1)">Next &rarr;</a>
+                }
+            </div>
+        }
+    }
+</div>

@@ -6,7 +6,7 @@
 {
     <div class="empty-state">
         <div class="empty-state-title">No entries yet</div>
-        <p>Entries you can see will appear here. Logging entries arrives in Phase 7.</p>
+        <p>Entries you can see will appear here.</p>
     </div>
 }
 else
@@ -14,7 +14,8 @@ else
     <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
         @foreach (var entry in Model)
         {
-            <article class="card entry-card">
+            <a class="card entry-card" style="text-decoration:none;color:inherit"
+               asp-controller="Entries" asp-action="Details" asp-route-id="@entry.Id">
                 <div class="entry-card-cover">
                     @if (!string.IsNullOrEmpty(entry.CoverUrl))
                     {
@@ -36,14 +37,14 @@ else
                         <p class="entry-card-review">@entry.Review</p>
                     }
                     <div class="entry-card-actions">
-                        <span class="badge status-completed">@entry.Status</span>
+                        <span class="badge @entry.Status.ToBadgeClass()">@entry.Status.ToDisplayLabel()</span>
                         @if (entry.Privacy != Privacy.Public)
                         {
                             <span class="badge badge-muted">@entry.Privacy</span>
                         }
                     </div>
                 </div>
-            </article>
+            </a>
         }
     </div>
 }

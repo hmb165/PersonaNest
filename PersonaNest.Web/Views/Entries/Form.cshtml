@@ -1,0 +1,223 @@
+@model EntryFormViewModel
+@{
+    ViewData["Title"] = Model.IsEdit ? "Edit Entry" : "Log an Entry";
+    var prefix = Model.IsEdit ? "Edit" : "Create";
+}
+
+<form asp-controller="Entries" asp-action="@(Model.IsEdit ? "Edit" : "Create")"
+      asp-route-id="@Model.EntryId" method="post" novalidate>
+<div class="entry-form-layout" style="padding:var(--sp-6) var(--sp-8)">
+    <div>
+        <div style="font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--text-primary);margin-bottom:var(--sp-6)">
+            @(Model.IsEdit ? "Edit Entry" : "Log an Entry")
+        </div>
+
+        <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+            @if (Model.IsEdit)
+            {
+                <input type="hidden" asp-for="Edit.Id" />
+            }
+            else
+            {
+                <input type="hidden" asp-for="Create.MediaId" />
+            }
+
+            <div class="settings-section">
+                <div class="settings-section-title">Media</div>
+                @if (Model.Media is not null)
+                {
+                    <div class="flex gap-3" style="background:var(--bg-overlay);border-radius:var(--r-md);padding:var(--sp-4);border:1px solid var(--border)">
+                        <div style="width:52px;height:76px;border-radius:var(--r-sm);overflow:hidden;background:var(--bg-subtle);flex-shrink:0">
+                            @if (!string.IsNullOrEmpty(Model.Media.OfficialCoverUrl))
+                            {
+                                <img src="@Model.Media.OfficialCoverUrl" alt="@Model.Media.Title" style="width:100%;height:100%;object-fit:cover" />
+                            }
+                        </div>
+                        <div>
+                            <div style="font-weight:600;color:var(--text-primary)">@Model.Media.Title</div>
+                            <div style="font-size:12px;color:var(--text-muted);font-family:var(--font-mono)">
+                                @Model.Media.CategoryName @(Model.Media.ReleaseYear is not null ? $"· {Model.Media.ReleaseYear}" : "")
+                            </div>
+                            <a class="btn btn-ghost btn-sm" style="margin-top:var(--sp-2);padding:4px 10px"
+                               asp-controller="Media" asp-action="Details" asp-route-id="@Model.Media.Id">View media page</a>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-section-title">Rating &amp; Status</div>
+                <div class="form-group">
+                    <label class="form-label">Your Rating (optional)</label>
+                    <div class="star-rating" data-star-rating>
+                        <span class="star" data-star="1">&#9733;</span>
+                        <span class="star" data-star="2">&#9733;</span>
+                        <span class="star" data-star="3">&#9733;</span>
+                        <span class="star" data-star="4">&#9733;</span>
+                        <span class="star" data-star="5">&#9733;</span>
+                        <span class="star-rating-value" data-rating-readout>Unrated</span>
+                        <span class="star-rating-clear" data-rating-clear>clear</span>
+                    </div>
+                    @if (Model.IsEdit)
+                    {
+                        <input class="form-input" asp-for="Edit.Rating" type="number" step="0.5" min="0.5" max="10"
+                               style="max-width:120px;margin-top:var(--sp-2)" data-rating-input placeholder="e.g. 8.5" />
+                        <span asp-validation-for="Edit.Rating"></span>
+                    }
+                    else
+                    {
+                        <input class="form-input" asp-for="Create.Rating" type="number" step="0.5" min="0.5" max="10"
+                               style="max-width:120px;margin-top:var(--sp-2)" data-rating-input placeholder="e.g. 8.5" />
+                        <span asp-validation-for="Create.Rating"></span>
+                    }
+                    <div class="form-hint">0.5–10.0 in 0.5 steps. Leave empty for an unrated entry.</div>
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                    <label class="form-label">Status</label>
+                    @if (Model.IsEdit)
+                    {
+                        <select class="form-select" asp-for="Edit.Status" asp-items="Html.GetEnumSelectList<EntryStatus>()"></select>
+                        <span asp-validation-for="Edit.Status"></span>
+                    }
+                    else
+                    {
+                        <select class="form-select" asp-for="Create.Status" asp-items="Html.GetEnumSelectList<EntryStatus>()"></select>
+                        <span asp-validation-for="Create.Status"></span>
+                    }
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-section-title">Review &amp; Notes</div>
+                <div class="form-group">
+                    <label class="form-label">Review (optional)</label>
+                    @if (Model.IsEdit)
+                    {
+                        <textarea class="form-textarea" asp-for="Edit.Review" style="min-height:120px"
+                                  placeholder="What did you think? You can be as brief or detailed as you like…"></textarea>
+                        <span asp-validation-for="Edit.Review"></span>
+                    }
+                    else
+                    {
+                        <textarea class="form-textarea" asp-for="Create.Review" style="min-height:120px"
+                                  placeholder="What did you think? You can be as brief or detailed as you like…"></textarea>
+                        <span asp-validation-for="Create.Review"></span>
+                    }
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                    <label class="form-label">Favorite Moment (optional)</label>
+                    @if (Model.IsEdit)
+                    {
+                        <input class="form-input" asp-for="Edit.FavoriteMoment" placeholder="The docking scene with the Hans Zimmer score…" />
+                        <span asp-validation-for="Edit.FavoriteMoment"></span>
+                    }
+                    else
+                    {
+                        <input class="form-input" asp-for="Create.FavoriteMoment" placeholder="The docking scene with the Hans Zimmer score…" />
+                        <span asp-validation-for="Create.FavoriteMoment"></span>
+                    }
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-section-title">Tags</div>
+                <div style="display:flex;flex-wrap:wrap;gap:var(--sp-2)">
+                    @foreach (var tag in Model.AvailableTags)
+                    {
+                        var inputId = $"tag-{tag.Id}";
+                        var isChecked = Model.SelectedTagIds.Contains(tag.Id);
+                        <label style="display:inline-flex" for="@inputId">
+                            <input type="checkbox" id="@inputId" name="@(prefix).TagIds" value="@tag.Id"
+                                   checked="@isChecked" class="visually-hidden" data-tag-toggle />
+                            <span class="tag @(isChecked ? "active" : null)">@tag.Name</span>
+                        </label>
+                    }
+                </div>
+                @if (Model.AvailableTags.Count == 0)
+                {
+                    <p class="text-muted" style="font-size:13px;margin:0">No tags have been seeded yet.</p>
+                }
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-section-title">Privacy &amp; Date</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)">
+                    <div class="form-group" style="margin:0">
+                        <label class="form-label">Privacy</label>
+                        @if (Model.IsEdit)
+                        {
+                            <select class="form-select" asp-for="Edit.Privacy" asp-items="Html.GetEnumSelectList<Privacy>()"></select>
+                            <span asp-validation-for="Edit.Privacy"></span>
+                        }
+                        else
+                        {
+                            <select class="form-select" asp-for="Create.Privacy" asp-items="Html.GetEnumSelectList<Privacy>()"></select>
+                            <span asp-validation-for="Create.Privacy"></span>
+                        }
+                    </div>
+                    <div class="form-group" style="margin:0">
+                        <label class="form-label">Date (optional)</label>
+                        @if (Model.IsEdit)
+                        {
+                            <input class="form-input" asp-for="Edit.ConsumedAt" type="date" />
+                            <span asp-validation-for="Edit.ConsumedAt"></span>
+                        }
+                        else
+                        {
+                            <input class="form-input" asp-for="Create.ConsumedAt" type="date" />
+                            <span asp-validation-for="Create.ConsumedAt"></span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button type="submit" class="btn btn-primary btn-lg">Save Entry</button>
+                @if (Model.Media is not null)
+                {
+                    <a class="btn btn-secondary" asp-controller="Media" asp-action="Details" asp-route-id="@Model.Media.Id">Cancel</a>
+                }
+                else
+                {
+                    <a class="btn btn-secondary" asp-controller="Entries" asp-action="Index">Cancel</a>
+                }
+            </div>
+    </div>
+
+    <div>
+        <div class="card" style="padding:var(--sp-5)">
+            <div class="dashboard-section-title">Personal Cover Image</div>
+            <div style="aspect-ratio:2/3;background:var(--bg-overlay);border-radius:var(--r-md);overflow:hidden;margin-bottom:var(--sp-4);border:2px dashed var(--border)" id="cover-preview">
+                @{
+                    var currentCover = Model.IsEdit ? Model.Edit.PersonalCoverUrl : Model.Create.PersonalCoverUrl;
+                }
+                @if (!string.IsNullOrEmpty(currentCover))
+                {
+                    <img src="@currentCover" alt="Personal cover" style="width:100%;height:100%;object-fit:cover" data-cover-image />
+                }
+            </div>
+            <div class="form-group">
+                <label class="form-label">Cover image URL</label>
+                @if (Model.IsEdit)
+                {
+                    <input class="form-input" asp-for="Edit.PersonalCoverUrl" placeholder="https://…" data-cover-input />
+                    <span asp-validation-for="Edit.PersonalCoverUrl"></span>
+                }
+                else
+                {
+                    <input class="form-input" asp-for="Create.PersonalCoverUrl" placeholder="https://…" data-cover-input />
+                    <span asp-validation-for="Create.PersonalCoverUrl"></span>
+                }
+                <div class="form-hint">
+                    A direct image URL. This never replaces the shared official cover - only you see it (§5).
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
