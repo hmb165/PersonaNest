@@ -22,7 +22,10 @@
         @if (Model.Header.IsViewerSelf)
         {
             <div class="profile-banner-actions">
-                <a class="btn btn-secondary btn-sm" asp-controller="Settings" asp-action="Index">Edit Profile</a>
+                <a class="icon-btn" asp-controller="Profile" asp-action="Edit"
+                   title="Edit profile" aria-label="Edit profile">&#9998;</a>
+                <a class="icon-btn" asp-controller="Settings" asp-action="Index"
+                   title="Settings" aria-label="Settings">&#9881;</a>
             </div>
         }
     </div>
@@ -49,22 +52,21 @@
         </div>
 
         <div class="profile-actions">
-            @if (Model.Header.IsViewerSelf)
+            @if (!Model.Header.IsViewerSelf)
             {
-                <a class="btn btn-secondary" asp-controller="Settings" asp-action="Index">Settings</a>
-            }
-            else if (User.IsSignedIn())
-            {
-                <form asp-controller="Social" asp-action="Follow" asp-route-id="@Model.Header.Id" method="post">
-                    <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
-                    <button type="submit" class="btn @(Model.Header.IsFollowedByViewer ? "btn-secondary" : "btn-primary")">
-                        @(Model.Header.IsFollowedByViewer ? "Following ✓" : "Follow")
-                    </button>
-                </form>
-            }
-            else
-            {
-                <a class="btn btn-primary" asp-controller="Auth" asp-action="Login">Follow</a>
+                @if (User.IsSignedIn())
+                {
+                    <form asp-controller="Social" asp-action="Follow" asp-route-id="@Model.Header.Id" method="post">
+                        <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+                        <button type="submit" class="btn @(Model.Header.IsFollowedByViewer ? "btn-secondary" : "btn-primary")">
+                            @(Model.Header.IsFollowedByViewer ? "Following ✓" : "Follow")
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <a class="btn btn-primary" asp-controller="Auth" asp-action="Login">Follow</a>
+                }
             }
         </div>
     </header>

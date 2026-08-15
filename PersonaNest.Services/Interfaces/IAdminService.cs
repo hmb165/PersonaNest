@@ -42,4 +42,20 @@ public interface IAdminService
     Task<PagedResult<ReportQueueItemDto>> GetReportQueueAsync(
         ReportStatus? status = null, ReportTargetType? targetType = null,
         int page = 1, int pageSize = 20, CancellationToken cancellationToken = default);
+
+    /// <summary>Reports resolved on or after <paramref name="since"/> - the Moderator Dashboard's "Resolved (30d)" stat.</summary>
+    Task<int> CountResolvedReportsSinceAsync(
+        DateTime since, CancellationToken cancellationToken = default);
+
+    Task<ServiceResult> ResolveReportAsync(
+        ReportTargetType targetType, int reportId, string moderatorId, string? notes,
+        CancellationToken cancellationToken = default);
+
+    Task<ServiceResult> DismissReportAsync(
+        ReportTargetType targetType, int reportId, string moderatorId, string? notes,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>A single user for the Admin -&gt; Users -&gt; Details page.</summary>
+    Task<UserCardDto?> GetUserByIdAsync(
+        string userId, CancellationToken cancellationToken = default);
 }

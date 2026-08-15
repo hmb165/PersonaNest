@@ -55,4 +55,8 @@ public interface IEntryService
     /// <summary>Adds or removes the viewer's like on an entry (§18). Returns the state after the toggle.</summary>
     Task<ServiceResult<bool>> ToggleLikeAsync(
         string userId, int entryId, CancellationToken cancellationToken = default);
+
+    /// <summary>Entries the user created on or after <paramref name="since"/> - the Dashboard's "this week" stat.</summary>
+    Task<int> CountCreatedSinceAsync(
+        string userId, DateTime since, CancellationToken cancellationToken = default);
 }

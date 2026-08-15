@@ -4,92 +4,19 @@
 }
 
 <div class="page-shell">
+    <a class="settings-back" asp-controller="Profile" asp-action="Index" asp-route-userName="@Model.UserName">
+        &#8592; Back to profile
+    </a>
+
     <div class="settings-layout">
         <nav class="settings-nav" aria-label="Settings sections">
-            <a class="settings-nav-item active" href="#profile">Profile</a>
-            <a class="settings-nav-item" href="#appearance">Appearance</a>
-            <a class="settings-nav-item" href="#privacy">Privacy</a>
-            <span class="settings-nav-item" style="opacity:.45;cursor:default"
-                  title="Arrives with SignalR in Phase 15">Notifications</span>
-            <span class="settings-nav-item" style="opacity:.45;cursor:default"
-                  title="Arrives in a later phase">Account</span>
+            <a class="settings-nav-item active" href="#privacy">Privacy</a>
+            <a class="settings-nav-item" asp-controller="Notifications" asp-action="Index">Notifications</a>
+            <a class="settings-nav-item" href="#account">Account</a>
         </nav>
 
         <div>
             <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
-
-            @* ── Public profile ─────────────────────────────────────────── *@
-            <section class="settings-section" id="profile">
-                <h2 class="settings-section-title">Public Profile</h2>
-
-                <form asp-controller="Settings" asp-action="Profile" method="post" novalidate>
-                    <div class="form-group">
-                        <label class="form-label" asp-for="Profile.DisplayName"></label>
-                        <input class="form-input" asp-for="Profile.DisplayName" />
-                        <span asp-validation-for="Profile.DisplayName"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" asp-for="Profile.Bio"></label>
-                        <textarea class="form-textarea" asp-for="Profile.Bio" style="min-height:90px"></textarea>
-                        <span asp-validation-for="Profile.Bio"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" asp-for="Profile.ProfilePictureUrl"></label>
-                        <input class="form-input" asp-for="Profile.ProfilePictureUrl"
-                               placeholder="https://…" />
-                        <div class="form-hint">
-                            A URL for now. Uploading files arrives with the entry cover upload in Phase 7.
-                        </div>
-                        <span asp-validation-for="Profile.ProfilePictureUrl"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" asp-for="Profile.BannerUrl"></label>
-                        <input class="form-input" asp-for="Profile.BannerUrl" placeholder="https://…" />
-                        <span asp-validation-for="Profile.BannerUrl"></span>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">Save Profile</button>
-                </form>
-            </section>
-
-            @* ── Appearance ─────────────────────────────────────────────── *@
-            <section class="settings-section" id="appearance">
-                <h2 class="settings-section-title">Appearance</h2>
-                <p style="font-size:13px;color:var(--text-muted);margin-bottom:var(--sp-4)">
-                    PersonaNest uses one cinematic dark palette. A theme picks the accent pair
-                    applied across your profile; a custom colour overrides it.
-                </p>
-
-                <form asp-controller="Settings" asp-action="Appearance" method="post" novalidate>
-                    <div class="form-group">
-                        <label class="form-label">Theme</label>
-                        <div class="swatch-row">
-                            @foreach (var theme in Model.Themes)
-                            {
-                                <label title="@theme.Name" style="display:inline-flex">
-                                    <input type="radio" asp-for="Appearance.ThemeId" value="@theme.Id"
-                                           class="visually-hidden" />
-                                    <span class="swatch" style="background:@theme.PrimaryHex"></span>
-                                </label>
-                            }
-                        </div>
-                        <span asp-validation-for="Appearance.ThemeId"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" asp-for="Appearance.AccentColor"></label>
-                        <input class="form-input" asp-for="Appearance.AccentColor"
-                               placeholder="#7c5cfc" style="max-width:180px" />
-                        <div class="form-hint">Leave blank to use your theme's accent.</div>
-                        <span asp-validation-for="Appearance.AccentColor"></span>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">Save Appearance</button>
-                </form>
-            </section>
 
             @* ── Privacy ────────────────────────────────────────────────── *@
             <section class="settings-section" id="privacy">
@@ -107,6 +34,24 @@
                     </div>
 
                     <button type="submit" class="btn btn-primary">Save Privacy</button>
+                </form>
+            </section>
+
+            @* ── Account ────────────────────────────────────────────────── *@
+            <section class="settings-section" id="account">
+                <h2 class="settings-section-title">Account</h2>
+
+                <div style="display:flex;flex-direction:column;gap:var(--sp-2);margin-bottom:var(--sp-5)">
+                    <div style="font-size:14px;color:var(--text-secondary)">
+                        Signed in as <strong style="color:var(--text-primary)">@@@Model.UserName</strong>
+                    </div>
+                    <div style="font-size:13px;color:var(--text-muted);font-family:var(--font-mono)">
+                        Member since @Model.MemberSince.ToString("MMM d, yyyy")
+                    </div>
+                </div>
+
+                <form asp-controller="Auth" asp-action="Logout" method="post">
+                    <button type="submit" class="btn btn-secondary">Sign out</button>
                 </form>
             </section>
 
@@ -130,9 +75,9 @@
                         Want to help moderate the PersonaNest community? An admin will review your
                         profile and activity.
                     </p>
-                    <button class="btn btn-secondary" disabled title="Arrives in Phase 11">
+                    <a class="btn btn-secondary" asp-controller="Moderation" asp-action="Apply">
                         Apply to become a Moderator
-                    </button>
+                    </a>
                 }
             </section>
         </div>

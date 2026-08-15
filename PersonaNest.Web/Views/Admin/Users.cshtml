@@ -1,0 +1,89 @@
+@model UserManagementViewModel
+@{
+    ViewData["Title"] = "User Management";
+    ViewData["Nav"] = "Admin";
+}
+
+<div style="padding:var(--sp-6) var(--sp-8)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-5);flex-wrap:wrap;gap:var(--sp-3)">
+        <div style="font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--text-primary)">
+            User Management <span style="font-size:16px;color:var(--text-muted);font-family:var(--font-mono)">(@Model.TotalCount)</span>
+        </div>
+        <form asp-controller="Admin" asp-action="Users" method="get" class="flex gap-2">
+            <input class="form-input" type="text" name="query" value="@Model.Query"
+                   placeholder="Search username, name or email…" style="width:260px" />
+            <button type="submit" class="btn btn-secondary btn-sm">Search</button>
+        </form>
+    </div>
+
+    @if (Model.Users.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="empty-state-title">No users found</div>
+        </div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead><tr><th>User</th><th>Role</th><th>Entries</th><th>Joined</th><th>Actions</th></tr></thead>
+                <tbody>
+                    @foreach (var user in Model.Users)
+                    {
+                        var roleBadge = user.Roles.Contains("Admin") ? "badge-role-admin"
+                            : user.Roles.Contains("Moderator") ? "badge-role-mod" : "badge-role-user";
+                        var roleLabel = user.Roles.Contains("Admin") ? "Admin"
+                            : user.Roles.Contains("Moderator") ? "Moderator" : "User";
+                        <tr>
+                            <td>
+                                <div class="flex gap-3">
+                                    <div class="avatar" style="width:28px;height:28px">
+                                        @if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
+                                        {
+                                            <img src="@user.ProfilePictureUrl" alt="@user.DisplayName" />
+                                        }
+                                        else
+                                        {
+                                            <span class="avatar-fallback">@user.DisplayName.FirstOrDefault()</span>
+                                        }
+                                    </div>
+                                    <strong>@user.UserName</strong>
+                                    @if (user.IsBanned)
+                                    {
+                                        <span class="badge badge-danger" style="font-size:9px">Banned</span>
+                                    }
+                                </div>
+                            </td>
+                            <td><span class="badge @roleBadge">@roleLabel</span></td>
+                            <td class="mono">@user.EntryCount</td>
+                            <td class="mono" style="font-size:12px">@user.CreatedAt.ToString("MMM yyyy")</td>
+                            <td>
+                                <a class="btn btn-ghost btn-sm" asp-controller="Admin" asp-action="UserDetails"
+                                   asp-route-id="@user.Id">Manage</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <div class="flex gap-2" style="justify-content:center;margin-top:var(--sp-6)">
+                @if (Model.Page > 1)
+                {
+                    <a class="btn btn-secondary btn-sm" asp-controller="Admin" asp-action="Users"
+                       asp-route-query="@Model.Query" asp-route-page="@(Model.Page - 1)">&larr; Previous</a>
+                }
+                <span class="mono" style="align-self:center;color:var(--text-muted);font-size:13px">
+                    Page @Model.Page of @Model.TotalPages
+                </span>
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a class="btn btn-secondary btn-sm" asp-controller="Admin" asp-action="Users"
+                       asp-route-query="@Model.Query" asp-route-page="@(Model.Page + 1)">Next &rarr;</a>
+                }
+            </div>
+        }
+    }
+</div>

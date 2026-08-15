@@ -10,6 +10,10 @@ public interface IProfileService
     Task<ProfileHeaderDto?> GetByUserNameAsync(
         string userName, string? viewerId, CancellationToken cancellationToken = default);
 
+    /// <summary>Raw (unresolved) appearance state for the edit form - see <see cref="AppearanceDto"/>.</summary>
+    Task<AppearanceDto?> GetAppearanceAsync(
+        string userId, CancellationToken cancellationToken = default);
+
     Task<ProfileStatsDto> GetStatsAsync(
         string userId, CancellationToken cancellationToken = default);
 

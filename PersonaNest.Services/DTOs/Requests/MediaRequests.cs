@@ -3,6 +3,31 @@ using System.ComponentModel.DataAnnotations;
 namespace PersonaNest.Services.DTOs.Requests;
 
 /// <summary>
+/// 1800..this year - a compile-time <see cref="RangeAttribute"/> can't reference
+/// <see cref="DateTime.UtcNow"/>, so this is a small custom attribute instead.
+/// </summary>
+public sealed class MaxCurrentYearAttribute : ValidationAttribute
+{
+    public MaxCurrentYearAttribute() : base("Enter a year between 1800 and {0}.")
+    {
+    }
+
+    public override bool IsValid(object? value)
+    {
+        if (value is null)
+        {
+            return true;
+        }
+
+        var year = (int)value;
+        return year is >= 1800 and <= 9999 && year <= DateTime.UtcNow.Year;
+    }
+
+    public override string FormatErrorMessage(string name) =>
+        string.Format(ErrorMessageString, DateTime.UtcNow.Year);
+}
+
+/// <summary>
 /// The Add Media form (§4). Data annotations give the client-side unobtrusive validation of §12;
 /// the service re-checks every rule server-side, because client validation is never trusted.
 /// </summary>
@@ -23,13 +48,9 @@ public sealed class CreateMediaRequest
     [Display(Name = "Creator / Studio / Author")]
     public string? Creator { get; set; }
 
-    [Range(1800, 2200, ErrorMessage = "Enter a year between 1800 and 2200.")]
+    [MaxCurrentYear]
     [Display(Name = "Release Year")]
     public int? ReleaseYear { get; set; }
-
-    [Range(1, 100000)]
-    [Display(Name = "Runtime (minutes)")]
-    public int? RuntimeMinutes { get; set; }
 
     [StringLength(2000)]
     [Display(Name = "Description")]
@@ -64,11 +85,8 @@ public sealed class UpdateMediaRequest
     [StringLength(200)]
     public string? Creator { get; set; }
 
-    [Range(1800, 2200)]
+    [MaxCurrentYear]
     public int? ReleaseYear { get; set; }
-
-    [Range(1, 100000)]
-    public int? RuntimeMinutes { get; set; }
 
     [StringLength(2000)]
     public string? Description { get; set; }

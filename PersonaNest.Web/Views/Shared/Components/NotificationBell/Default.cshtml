@@ -1,0 +1,35 @@
+@model NotificationBellViewModel
+
+<div class="notification-bell" data-notification-bell>
+    <button type="button" class="notification-bell-toggle" data-bs-toggle="collapse"
+            data-bs-target="#notificationBellPanel" aria-controls="notificationBellPanel"
+            aria-expanded="false" aria-label="Notifications">
+        &#128276;
+        <span class="notification-bell-badge @(Model.UnreadCount == 0 ? "d-none" : "")"
+              data-notification-count>@Model.UnreadCount</span>
+    </button>
+
+    <div class="collapse notification-bell-panel" id="notificationBellPanel">
+        <div class="notification-bell-panel-header">
+            <span>Notifications</span>
+            <a asp-controller="Notifications" asp-action="Index">View all</a>
+        </div>
+        <div class="notification-bell-panel-list" data-notification-list>
+            @if (Model.Recent.Count == 0)
+            {
+                <div class="notification-bell-empty" data-notification-empty>No notifications yet.</div>
+            }
+            else
+            {
+                foreach (var notification in Model.Recent)
+                {
+                    <a class="notification-bell-item @(notification.IsRead ? "" : "notification-bell-item-unread")"
+                       href="@(notification.Url ?? "#")">
+                        <span class="notification-bell-item-message">@notification.Message</span>
+                        <span class="notification-bell-item-time">@notification.CreatedAt.ToString("MMM d, h:mm tt")</span>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+</div>

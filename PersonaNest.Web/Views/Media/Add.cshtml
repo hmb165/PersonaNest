@@ -33,6 +33,21 @@
         </div>
     }
 
+    @* External-API auto-fill (bonus: Consume an External API) - one provider per category (TMDB,
+       RAWG, Jikan, Google Books, MusicBrainz). Hidden until external-search.js reveals it once a
+       category is chosen - a plain <noscript> environment never sees this panel and the manual
+       fields below work exactly as before. *@
+    <div id="externalSearchPanel" class="card" style="display:none;padding:var(--sp-4);margin-bottom:var(--sp-5)">
+        <div class="dashboard-section-title" style="font-size:14px;margin-bottom:var(--sp-3)">
+            <span id="externalSearchLabel">Search</span>
+        </div>
+        <div class="flex gap-2" style="margin-bottom:var(--sp-3)">
+            <input type="text" class="form-input" id="externalQuery" placeholder="Search by title…" style="flex:1" />
+            <button type="button" class="btn btn-secondary" id="externalSearchBtn">Search</button>
+        </div>
+        <div id="externalResults" style="display:flex;flex-direction:column;gap:var(--sp-2);max-height:320px;overflow-y:auto"></div>
+    </div>
+
     <form asp-controller="Media" asp-action="Add" method="post" novalidate>
         @if (Model.HasDuplicateWarning)
         {
@@ -48,7 +63,7 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)">
             <div class="form-group">
                 <label class="form-label" asp-for="Form.CategoryId"></label>
-                <select class="form-select" asp-for="Form.CategoryId"
+                <select class="form-select" asp-for="Form.CategoryId" id="mediaCategorySelect"
                         asp-items="@(new SelectList(Model.Categories, nameof(CategoryDto.Id), nameof(CategoryDto.Name)))">
                     <option value="">Choose a category…</option>
                 </select>
@@ -56,7 +71,8 @@
             </div>
             <div class="form-group">
                 <label class="form-label" asp-for="Form.ReleaseYear"></label>
-                <input class="form-input" asp-for="Form.ReleaseYear" placeholder="2001" />
+                <input class="form-input" asp-for="Form.ReleaseYear" placeholder="2001"
+                       min="1800" max="@DateTime.UtcNow.Year" />
                 <span asp-validation-for="Form.ReleaseYear"></span>
             </div>
         </div>
@@ -65,12 +81,6 @@
             <label class="form-label" asp-for="Form.Creator"></label>
             <input class="form-input" asp-for="Form.Creator" placeholder="Studio Ghibli" />
             <span asp-validation-for="Form.Creator"></span>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label" asp-for="Form.RuntimeMinutes"></label>
-            <input class="form-input" asp-for="Form.RuntimeMinutes" style="max-width:160px" />
-            <span asp-validation-for="Form.RuntimeMinutes"></span>
         </div>
 
         <div class="form-group">
@@ -97,4 +107,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/external-search.js" asp-append-version="true"></script>
 }

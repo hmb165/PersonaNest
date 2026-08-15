@@ -1,0 +1,173 @@
+@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    ViewData["Nav"] = "Admin";
+}
+
+<div class="admin-layout">
+    <div class="admin-sidebar">
+        <div class="admin-sidebar-title">Admin Panel</div>
+        <a class="admin-link active"><span class="admin-link-icon">&#128202;</span>Dashboard</a>
+        <a class="admin-link" asp-controller="Admin" asp-action="Users">
+            <span class="admin-link-icon">&#128101;</span>Users
+        </a>
+        <a class="admin-link" asp-controller="Admin" asp-action="Media">
+            <span class="admin-link-icon">&#127916;</span>Media
+        </a>
+        <a class="admin-link" asp-controller="Admin" asp-action="Categories">
+            <span class="admin-link-icon">&#128209;</span>Categories
+        </a>
+        <a class="admin-link" asp-controller="Admin" asp-action="Applications">
+            <span class="admin-link-icon">&#128203;</span>Applications
+            @if (Model.Stats.PendingApplications > 0)
+            {
+                <span class="badge badge-warning" style="font-size:9px;margin-left:auto">@Model.Stats.PendingApplications</span>
+            }
+        </a>
+        <a class="admin-link" asp-controller="Moderation" asp-action="Reports">
+            <span class="admin-link-icon">&#128681;</span>Reports
+            @if (Model.Stats.OpenReports > 0)
+            {
+                <span class="badge badge-danger" style="font-size:9px;margin-left:auto">@Model.Stats.OpenReports</span>
+            }
+        </a>
+    </div>
+
+    <div class="admin-main">
+        <div style="font-family:var(--font-display);font-size:22px;font-weight:600;color:var(--text-primary);margin-bottom:var(--sp-6)">
+            System Overview
+        </div>
+
+        <div class="admin-stats">
+            <div class="card stat-card">
+                <div class="stat-card-label">Total Users</div>
+                <div class="stat-card-value">@Model.Stats.TotalUsers</div>
+                <div class="stat-card-sub">+@Model.Stats.UsersJoinedThisWeek this week</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-card-label">Media Items</div>
+                <div class="stat-card-value">@Model.Stats.TotalMedia</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-card-label">Total Entries</div>
+                <div class="stat-card-value">@Model.Stats.TotalEntries</div>
+                <div class="stat-card-sub">+@Model.Stats.EntriesThisWeek this week</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-card-label">Collections</div>
+                <div class="stat-card-value" style="color:var(--success)">@Model.Stats.TotalCollections</div>
+            </div>
+        </div>
+
+        <div class="ds-h2" style="font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--text-primary);margin:var(--sp-6) 0 var(--sp-4)">
+            Recent Users
+        </div>
+        @if (Model.RecentUsers.Count == 0)
+        {
+            <p class="text-muted" style="font-size:13px">No users yet.</p>
+        }
+        else
+        {
+            <div class="table-wrap" style="margin-bottom:var(--sp-6)">
+                <table class="data-table">
+                    <thead><tr><th>User</th><th>Role</th><th>Entries</th><th>Joined</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        @foreach (var user in Model.RecentUsers)
+                        {
+                            var roleBadge = user.Roles.Contains("Admin") ? "badge-role-admin"
+                                : user.Roles.Contains("Moderator") ? "badge-role-mod" : "badge-role-user";
+                            var roleLabel = user.Roles.Contains("Admin") ? "Admin"
+                                : user.Roles.Contains("Moderator") ? "Moderator" : "User";
+                            <tr>
+                                <td>
+                                    <div class="flex gap-3">
+                                        <div class="avatar" style="width:28px;height:28px">
+                                            @if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
+                                            {
+                                                <img src="@user.ProfilePictureUrl" alt="@user.DisplayName" />
+                                            }
+                                            else
+                                            {
+                                                <span class="avatar-fallback">@user.DisplayName.FirstOrDefault()</span>
+                                            }
+                                        </div>
+                                        <strong>@user.UserName</strong>
+                                    </div>
+                                </td>
+                                <td><span class="badge @roleBadge">@roleLabel</span></td>
+                                <td class="mono">@user.EntryCount</td>
+                                <td class="mono" style="font-size:12px">@user.CreatedAt.ToString("MMM yyyy")</td>
+                                <td>
+                                    <div class="flex gap-2">
+                                        <a class="btn btn-ghost btn-sm" asp-controller="Admin" asp-action="UserDetails"
+                                           asp-route-id="@user.Id">Manage</a>
+                                        @if (!user.Roles.Contains("Admin") && !user.Roles.Contains("Moderator"))
+                                        {
+                                            <form asp-controller="Admin" asp-action="Promote" asp-route-id="@user.Id" method="post">
+                                                <button type="submit" class="btn btn-secondary btn-sm"
+                                                        style="background:rgba(251,191,36,0.12);color:var(--warning);border:1px solid rgba(251,191,36,0.3)">
+                                                    Promote
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <div class="ds-h2" style="font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--text-primary);margin:var(--sp-6) 0 var(--sp-4)">
+            Pending Applications
+        </div>
+        @if (Model.PendingApplications.Count == 0)
+        {
+            <p class="text-muted" style="font-size:13px">No pending applications.</p>
+        }
+        else
+        {
+            <div style="display:flex;flex-direction:column;gap:var(--sp-4)">
+                @foreach (var application in Model.PendingApplications)
+                {
+                    <div class="mod-app-card">
+                        <div class="mod-app-avatar">
+                            @if (!string.IsNullOrEmpty(application.ProfilePictureUrl))
+                            {
+                                <img src="@application.ProfilePictureUrl" alt="@application.DisplayName" />
+                            }
+                            else
+                            {
+                                <span class="avatar-fallback" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">
+                                    @application.DisplayName.FirstOrDefault()
+                                </span>
+                            }
+                        </div>
+                        <div class="mod-app-info">
+                            <div class="mod-app-user">@application.DisplayName</div>
+                            <div class="mod-app-meta">
+                                &#64;@application.UserName &middot; @application.ApplicantEntryCount entries
+                                &middot; Applied @application.AppliedAt.ToString("MMM d, yyyy")
+                            </div>
+                            <div class="mod-app-reason">"@application.Reason"</div>
+                            <div class="mod-app-actions">
+                                <a class="btn btn-ghost btn-sm" asp-controller="Profile" asp-action="Index"
+                                   asp-route-userName="@application.UserName">View Profile</a>
+                                <form asp-controller="Admin" asp-action="ApplicationsApprove" asp-route-id="@application.Id" method="post">
+                                    <button type="submit" class="btn btn-success btn-sm"
+                                            style="background:rgba(74,222,128,0.15);color:var(--success);border:1px solid rgba(74,222,128,0.3)">
+                                        &#10003; Approve
+                                    </button>
+                                </form>
+                                <form asp-controller="Admin" asp-action="ApplicationsReject" asp-route-id="@application.Id" method="post">
+                                    <button type="submit" class="btn btn-danger btn-sm">&#10005; Reject</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

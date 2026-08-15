@@ -20,11 +20,11 @@ public class FavoriteService : IFavoriteService
         string userId, int page = 1, int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        var repository = _uow.Repository<Favorite>();
-
-        // Projected straight from Favorite through its Media navigation, so no second query and
-        // no over-fetching (§13).
-        var items = await repository.ListAsync(
+        // IFavoriteRepository, not the generic repository: Favorite->Media is a required
+        // navigation into a soft-delete-filtered entity, so a plain filtered query would silently
+        // drop a favorite the moment its media is removed - exactly what Restrict on that FK was
+        // chosen to prevent (§13, Phase 13 finding; same issue as ICollectionRepository).
+        var items = await _uow.Favorites.ListIncludingRemovedMediaAsync(
             f => f.UserId == userId,
             f => new MediaCardDto
             {
@@ -41,7 +41,7 @@ public class FavoriteService : IFavoriteService
             q => q.OrderByDescending(f => f.CreatedAt),
             page, pageSize, cancellationToken);
 
-        var total = await repository.CountAsync(f => f.UserId == userId, cancellationToken);
+        var total = await _uow.Favorites.CountAsync(f => f.UserId == userId, cancellationToken);
 
         return new PagedResult<MediaCardDto>(items, total, page, pageSize);
     }

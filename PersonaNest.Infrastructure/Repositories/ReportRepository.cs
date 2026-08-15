@@ -158,4 +158,76 @@ public class ReportRepository : IReportRepository
             .Select(r => r.MediaId)
             .Distinct()
             .CountAsync(cancellationToken);
+
+    public async Task<int> CountResolvedSinceAsync(
+        DateTime since, CancellationToken cancellationToken = default)
+    {
+        var media = await _context.MediaReports.IgnoreQueryFilters()
+            .CountAsync(r => r.Status == ReportStatus.Resolved && r.ReviewedAt >= since, cancellationToken);
+        var entry = await _context.EntryReports.IgnoreQueryFilters()
+            .CountAsync(r => r.Status == ReportStatus.Resolved && r.ReviewedAt >= since, cancellationToken);
+        var comment = await _context.CommentReports.IgnoreQueryFilters()
+            .CountAsync(r => r.Status == ReportStatus.Resolved && r.ReviewedAt >= since, cancellationToken);
+
+        return media + entry + comment;
+    }
+
+    public async Task<bool> ResolveAsync(
+        ReportTargetType targetType, int reportId, string moderatorId, ReportStatus newStatus,
+        string? resolutionNotes, CancellationToken cancellationToken = default)
+    {
+        switch (targetType)
+        {
+            case ReportTargetType.Media:
+            {
+                var report = await _context.MediaReports.FirstOrDefaultAsync(
+                    r => r.Id == reportId && r.Status == ReportStatus.Open, cancellationToken);
+                if (report is null)
+                {
+                    return false;
+                }
+
+                report.Status = newStatus;
+                report.ReviewedAt = DateTime.UtcNow;
+                report.ReviewedById = moderatorId;
+                report.ResolutionNotes = resolutionNotes;
+                return true;
+            }
+
+            case ReportTargetType.Entry:
+            {
+                var report = await _context.EntryReports.FirstOrDefaultAsync(
+                    r => r.Id == reportId && r.Status == ReportStatus.Open, cancellationToken);
+                if (report is null)
+                {
+                    return false;
+                }
+
+                report.Status = newStatus;
+                report.ReviewedAt = DateTime.UtcNow;
+                report.ReviewedById = moderatorId;
+                report.ResolutionNotes = resolutionNotes;
+                return true;
+            }
+
+            case ReportTargetType.Comment:
+            {
+                var report = await _context.CommentReports.FirstOrDefaultAsync(
+                    r => r.Id == reportId && r.Status == ReportStatus.Open, cancellationToken);
+                if (report is null)
+                {
+                    return false;
+                }
+
+                report.Status = newStatus;
+                report.ReviewedAt = DateTime.UtcNow;
+                report.ReviewedById = moderatorId;
+                report.ResolutionNotes = resolutionNotes;
+                return true;
+            }
+
+            default:
+                return false;
+        }
+    }
 }

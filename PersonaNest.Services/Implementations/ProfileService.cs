@@ -13,10 +13,13 @@ namespace PersonaNest.Services.Implementations;
 public class ProfileService : IProfileService
 {
     private readonly IUnitOfWork _uow;
+    private readonly ITasteProfileCalculator _tasteProfileCalculator;
 
-    public ProfileService(IUnitOfWork uow)
+    public ProfileService(IUnitOfWork uow, ITasteProfileCalculator tasteProfileCalculator)
     {
         _uow = uow ?? throw new ArgumentNullException(nameof(uow));
+        _tasteProfileCalculator = tasteProfileCalculator
+            ?? throw new ArgumentNullException(nameof(tasteProfileCalculator));
     }
 
     public Task<ProfileHeaderDto?> GetByUserNameAsync(
@@ -24,6 +27,13 @@ public class ProfileService : IProfileService
         => _uow.Repository<ApplicationUser>().FirstOrDefaultAsync(
             u => u.UserName == userName && !u.IsDeleted,
             UserMappings.ToProfileHeaderDto(viewerId),
+            cancellationToken);
+
+    public Task<AppearanceDto?> GetAppearanceAsync(
+        string userId, CancellationToken cancellationToken = default)
+        => _uow.Repository<ApplicationUser>().FirstOrDefaultAsync(
+            u => u.Id == userId && !u.IsDeleted,
+            UserMappings.ToAppearanceDto,
             cancellationToken);
 
     public async Task<ProfileStatsDto> GetStatsAsync(
@@ -43,10 +53,10 @@ public class ProfileService : IProfileService
         var favoriteCount = await _uow.Repository<Favorite>()
             .CountAsync(f => f.UserId == userId, cancellationToken);
 
-        var ratings = await _uow.Entries.ListAsync(
-            e => e.UserId == userId && e.Rating != null,
-            e => e.Rating!.Value,
-            orderBy: null, page: 1, pageSize: 100, cancellationToken);
+        // A single server-side AVG() (§13) - the previous version paged the raw ratings into
+        // memory to average them in C#, which silently capped a prolific user's average at their
+        // first 100 rated entries instead of covering all of them (Phase 13 finding).
+        var averageRating = await _uow.Entries.GetAverageRatingAsync(userId, cancellationToken);
 
         return new ProfileStatsDto
         {
@@ -56,16 +66,30 @@ public class ProfileService : IProfileService
             FollowingCount = followingCount,
             CollectionCount = collectionCount,
             FavoriteCount = favoriteCount,
-            AverageRating = ratings.Count > 0
-                ? Math.Round(ratings.Average(), 1, MidpointRounding.AwayFromZero)
+            AverageRating = averageRating is { } avg
+                ? Math.Round(avg, 1, MidpointRounding.AwayFromZero)
                 : null
         };
     }
 
-    public Task<TasteProfileDto?> GetTasteProfileAsync(
+    public async Task<TasteProfileDto?> GetTasteProfileAsync(
         string userId, CancellationToken cancellationToken = default)
-        => _uow.Repository<TasteProfile>().FirstOrDefaultAsync(
+    {
+        var persisted = await _uow.Repository<TasteProfile>().FirstOrDefaultAsync(
             tp => tp.UserId == userId, TasteProfileMappings.ToDto, cancellationToken);
+
+        if (persisted is not null)
+        {
+            return persisted;
+        }
+
+        // The Phase 12 background service hasn't computed a row for this user yet (or never
+        // will, for a user with few entries). Rather than show an empty state, compute the same
+        // shape on demand from real Entry/Tag data (§22), via the same calculator the background
+        // service uses. Deliberately not persisted here - Phase 12 owns writing the TasteProfile
+        // table; this is a read-time fallback, not a second competing model.
+        return await _tasteProfileCalculator.ComputeAsync(userId, cancellationToken);
+    }
 
     public async Task<ServiceResult> UpdateProfileAsync(
         string userId, UpdateProfileRequest request, CancellationToken cancellationToken = default)

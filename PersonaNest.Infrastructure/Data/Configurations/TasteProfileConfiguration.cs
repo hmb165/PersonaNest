@@ -12,6 +12,7 @@ public class TasteProfileConfiguration : IEntityTypeConfiguration<TasteProfile>
         builder.HasKey(tp => tp.UserId);
 
         builder.Property(tp => tp.AverageRating).HasPrecision(3, 1);
+        builder.Property(tp => tp.AiNarrative).HasMaxLength(600);
 
         builder.HasOne(tp => tp.User)
                .WithOne(u => u.TasteProfile)

@@ -64,3 +64,37 @@ public sealed class RegisterRequest
     [Display(Name = "Confirm Password")]
     public string ConfirmPassword { get; set; } = string.Empty;
 }
+
+/// <summary>The Forgot Password form (§12/D-17). Always reports success, win or lose, to avoid
+/// revealing whether an email address has an account (account enumeration).</summary>
+public sealed class ForgotPasswordRequest
+{
+    [Required(ErrorMessage = "Enter your email address.")]
+    [EmailAddress(ErrorMessage = "Enter a valid email address.")]
+    [Display(Name = "Email")]
+    public string Email { get; set; } = string.Empty;
+}
+
+/// <summary>The Reset Password form, reached via the link the development email sender logs.</summary>
+public sealed class ResetPasswordRequest
+{
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    public string Token { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Choose a new password.")]
+    [StringLength(100, MinimumLength = 8,
+        ErrorMessage = "Password must be at least 8 characters.")]
+    [DataType(DataType.Password)]
+    [Display(Name = "New Password")]
+    public string NewPassword { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Confirm your new password.")]
+    [DataType(DataType.Password)]
+    [Compare(nameof(NewPassword), ErrorMessage = "The two passwords do not match.")]
+    [Display(Name = "Confirm New Password")]
+    public string ConfirmPassword { get; set; } = string.Empty;
+}

@@ -1,0 +1,76 @@
+@model ModeratorDashboardViewModel
+@{
+    ViewData["Title"] = "Moderation Dashboard";
+    ViewData["Nav"] = "Moderation";
+}
+
+<div style="padding:var(--sp-6) var(--sp-8)">
+    <div style="font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--text-primary);margin-bottom:var(--sp-6)">
+        Moderation Dashboard
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-4);margin-bottom:var(--sp-6)">
+        <div class="card stat-card">
+            <div class="stat-card-label">Pending Reports</div>
+            <div class="stat-card-value" style="color:var(--danger)">@Model.OpenReports</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-card-label">Media to Review</div>
+            <div class="stat-card-value" style="color:var(--warning)">@Model.MediaAwaitingReview</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-card-label">Resolved (30d)</div>
+            <div class="stat-card-value" style="color:var(--success)">@Model.ResolvedLast30Days</div>
+        </div>
+    </div>
+
+    <div class="dashboard-section-title">Recent Flagged Content</div>
+    @if (Model.RecentReports.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="empty-state-title">Nothing open right now</div>
+            <p>The queue is clear.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr><th>Content</th><th>Type</th><th>Reported By</th><th>Date</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var report in Model.RecentReports)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@report.TargetLabel</strong>
+                                @if (!string.IsNullOrWhiteSpace(report.TargetSnippet))
+                                {
+                                    <div style="font-size:11px;color:var(--text-muted)">@report.Reason</div>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge @(report.TargetType == PersonaNest.Domain.Enums.ReportTargetType.Media ? "badge-warning" : "badge-danger")">
+                                    @report.TargetType
+                                </span>
+                            </td>
+                            <td><span class="mono">&#64;@report.ReporterUserName</span></td>
+                            <td><span class="mono" style="font-size:12px">@report.CreatedAt.ToString("MMM d")</span></td>
+                            <td>
+                                <div class="flex gap-2">
+                                    <a class="btn btn-ghost btn-sm" asp-controller="Moderation" asp-action="Reports"
+                                       asp-route-targetType="@report.TargetType">Review</a>
+                                    <form asp-controller="Moderation" asp-action="ResolveReport"
+                                          asp-route-targetType="@report.TargetType" asp-route-id="@report.Id" method="post">
+                                        <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -1,0 +1,84 @@
+@model NotificationsViewModel
+@{
+    ViewData["Title"] = "Notifications";
+}
+
+<div class="page-shell">
+    <a class="settings-back" asp-controller="Profile" asp-action="Index" asp-route-userName="@User.Identity!.Name">
+        &#8592; Back to profile
+    </a>
+
+    <div class="flex" style="justify-content:space-between;align-items:center;margin-bottom:var(--sp-6);flex-wrap:wrap;gap:var(--sp-3)">
+        <div style="font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--text-primary)">
+            Notifications <span style="font-size:16px;color:var(--text-muted);font-family:var(--font-mono)">(@Model.TotalCount)</span>
+        </div>
+        @if (Model.Notifications.Any(n => !n.IsRead))
+        {
+            <form asp-controller="Notifications" asp-action="MarkAllRead" method="post">
+                <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+                <button type="submit" class="btn btn-secondary btn-sm">Mark all as read</button>
+            </form>
+        }
+    </div>
+
+    @if (Model.Notifications.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="empty-state-title">No notifications yet</div>
+            <p>Follows, likes, comments and replies will show up here in real time.</p>
+        </div>
+    }
+    else
+    {
+        <div class="notification-list">
+            @foreach (var notification in Model.Notifications)
+            {
+                <div class="notification-row @(notification.IsRead ? "" : "notification-row-unread")">
+                    <a class="notification-row-link" href="@(notification.Url ?? "#")">
+                        <div class="avatar" style="width:36px;height:36px;flex-shrink:0">
+                            @if (!string.IsNullOrEmpty(notification.ActorProfilePictureUrl))
+                            {
+                                <img src="@notification.ActorProfilePictureUrl" alt="" />
+                            }
+                            else
+                            {
+                                <span class="avatar-fallback">@(notification.ActorDisplayName?.FirstOrDefault() ?? '?')</span>
+                            }
+                        </div>
+                        <div>
+                            <div class="notification-row-message">@notification.Message</div>
+                            <div class="notification-row-time">@notification.CreatedAt.ToString("MMM d, yyyy 'at' h:mm tt")</div>
+                        </div>
+                    </a>
+                    @if (!notification.IsRead)
+                    {
+                        <form asp-controller="Notifications" asp-action="MarkRead" method="post">
+                            <input type="hidden" name="id" value="@notification.Id" />
+                            <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+                            <button type="submit" class="btn btn-ghost btn-sm" title="Mark as read">&#10003;</button>
+                        </form>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <div class="flex gap-2" style="justify-content:center;margin-top:var(--sp-8)">
+                @if (Model.Page > 1)
+                {
+                    <a class="btn btn-secondary btn-sm" asp-controller="Notifications" asp-action="Index"
+                       asp-route-page="@(Model.Page - 1)">&larr; Previous</a>
+                }
+                <span class="mono" style="align-self:center;color:var(--text-muted);font-size:13px">
+                    Page @Model.Page of @Model.TotalPages
+                </span>
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a class="btn btn-secondary btn-sm" asp-controller="Notifications" asp-action="Index"
+                       asp-route-page="@(Model.Page + 1)">Next &rarr;</a>
+                }
+            </div>
+        }
+    }
+</div>

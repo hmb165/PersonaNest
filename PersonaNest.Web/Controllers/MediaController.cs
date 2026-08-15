@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PersonaNest.Domain.Enums;
 using PersonaNest.Services.DTOs.Requests;
 using PersonaNest.Services.DTOs.Responses;
 using PersonaNest.Services.Interfaces;
@@ -23,13 +24,29 @@ public class MediaController : Controller
     private readonly IMediaService _mediaService;
     private readonly IEntryService _entryService;
     private readonly ICollectionService _collectionService;
+    private readonly IReportService _reportService;
+    private readonly ITmdbService _tmdbService;
+    private readonly IRawgService _rawgService;
+    private readonly IGoogleBooksService _googleBooksService;
+    private readonly IJikanService _jikanService;
+    private readonly IMusicBrainzService _musicBrainzService;
 
     public MediaController(
-        IMediaService mediaService, IEntryService entryService, ICollectionService collectionService)
+        IMediaService mediaService, IEntryService entryService,
+        ICollectionService collectionService, IReportService reportService,
+        ITmdbService tmdbService, IRawgService rawgService,
+        IGoogleBooksService googleBooksService, IJikanService jikanService,
+        IMusicBrainzService musicBrainzService)
     {
         _mediaService = mediaService;
         _entryService = entryService;
         _collectionService = collectionService;
+        _reportService = reportService;
+        _tmdbService = tmdbService;
+        _rawgService = rawgService;
+        _googleBooksService = googleBooksService;
+        _jikanService = jikanService;
+        _musicBrainzService = musicBrainzService;
     }
 
     /// <summary>GET /Media/Details/{id}</summary>
@@ -80,6 +97,41 @@ public class MediaController : Controller
         return View(model);
     }
 
+    /// <summary>
+    /// GET /Media/SearchExternal?query=&amp;categoryId= - AJAX helper for the Add Media form
+    /// (bonus: Consume an External API), one provider per category. Not part of the
+    /// Swagger-documented REST API (Controllers/Api/) - this exists purely to keep every provider
+    /// key server-side, never shipped to the browser.
+    /// </summary>
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> SearchExternal(
+        string? query, int categoryId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return Json(Array.Empty<ExternalSearchResultDto>());
+        }
+
+        var trimmed = query.Trim();
+
+        // Seeded Category ids (CategoryConfiguration.cs): 1 Games, 2 Movies, 3 TV Shows,
+        // 4 Anime, 5 Manga, 6 Books, 7 Music.
+        var results = categoryId switch
+        {
+            1 => await _rawgService.SearchAsync(trimmed, cancellationToken),
+            2 => await _tmdbService.SearchAsync(trimmed, "movie", cancellationToken),
+            3 => await _tmdbService.SearchAsync(trimmed, "tv", cancellationToken),
+            4 => await _jikanService.SearchAsync(trimmed, "anime", cancellationToken),
+            5 => await _jikanService.SearchAsync(trimmed, "manga", cancellationToken),
+            6 => await _googleBooksService.SearchAsync(trimmed, cancellationToken),
+            7 => await _musicBrainzService.SearchAsync(trimmed, cancellationToken),
+            _ => Array.Empty<ExternalSearchResultDto>()
+        };
+
+        return Json(results);
+    }
+
     /// <summary>POST /Media/Add</summary>
     [HttpPost]
     [Authorize]
@@ -101,6 +153,25 @@ public class MediaController : Controller
 
         TempData["Success"] = $"\"{form.Title}\" was added to the database.";
         return RedirectToAction(nameof(Details), new { id = result.Value });
+    }
+
+    /// <summary>POST /Media/Report/{id}</summary>
+    [HttpPost("Media/Report/{id:int}")]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Report(
+        int id, ReportReason reason, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId()!;
+
+        var result = await _reportService.SubmitAsync(
+            new CreateReportRequest { TargetType = ReportTargetType.Media, TargetId = id, Reason = reason },
+            userId, cancellationToken);
+
+        TempData[result.Succeeded ? "Success" : "Error"] =
+            result.Succeeded ? "Thanks - a moderator will take a look." : result.FirstError;
+
+        return RedirectToAction(nameof(Details), new { id });
     }
 
     private async Task<IActionResult> RedisplayAddAsync(

@@ -1,0 +1,137 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["Nav"] = "Dashboard";
+}
+
+<div class="dashboard-layout" style="padding:var(--sp-6) var(--sp-8)">
+    <div>
+        <div style="margin-bottom:var(--sp-6)">
+            <div style="font-family:var(--font-display);font-size:26px;font-weight:600;color:var(--text-primary);margin-bottom:var(--sp-1)">
+                Welcome back, @Model.DisplayName.
+            </div>
+            <div style="font-size:14px;color:var(--text-muted)">Here's what's happening with your taste.</div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="card stat-card">
+                <div class="stat-card-label">Total Entries</div>
+                <div class="stat-card-value">@Model.Stats.EntryCount</div>
+                @if (Model.EntriesThisWeek > 0)
+                {
+                    <div class="stat-card-sub">+@Model.EntriesThisWeek this week</div>
+                }
+            </div>
+            <div class="card stat-card">
+                <div class="stat-card-label">Avg Rating</div>
+                <div class="stat-card-value" style="color:var(--warning)">
+                    @(Model.Stats.AverageRating?.ToString("0.0") ?? "—")
+                </div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-card-label">Followers</div>
+                <div class="stat-card-value">@Model.Stats.FollowerCount</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-card-label">Collections</div>
+                <div class="stat-card-value">@Model.Stats.CollectionCount</div>
+            </div>
+        </div>
+
+        <div class="dashboard-section-title">Recent Entries</div>
+        @if (Model.RecentEntries.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-state-title">No entries yet</div>
+                <p><a asp-controller="Search" asp-action="Index">Find something to log &rarr;</a></p>
+            </div>
+        }
+        else
+        {
+            <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
+                @foreach (var entry in Model.RecentEntries)
+                {
+                    <a class="card entry-card" style="text-decoration:none;color:inherit"
+                       asp-controller="Entries" asp-action="Details" asp-route-id="@entry.Id">
+                        <div class="entry-card-cover">
+                            @if (!string.IsNullOrEmpty(entry.CoverUrl))
+                            {
+                                <img src="@entry.CoverUrl" alt="@entry.MediaTitle" />
+                            }
+                        </div>
+                        <div class="entry-card-body">
+                            <div class="entry-card-title">@entry.MediaTitle</div>
+                            <div class="entry-card-meta">
+                                <span class="badge badge-muted" style="padding:2px 8px;font-size:10px">@entry.CategoryName</span>
+                                @if (entry.Rating is not null)
+                                {
+                                    <span style="color:var(--warning)">&#9733; @entry.Rating.Value.ToString("0.0")</span>
+                                }
+                                <span>@entry.CreatedAt.ToString("d MMM yyyy")</span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(entry.Review))
+                            {
+                                <p class="entry-card-review">@entry.Review</p>
+                            }
+                            <div class="entry-card-actions">
+                                <span class="badge @entry.Status.ToBadgeClass()">@entry.Status.ToDisplayLabel()</span>
+                            </div>
+                        </div>
+                    </a>
+                }
+            </div>
+        }
+    </div>
+
+    <div>
+        <div class="card" style="padding:var(--sp-5);margin-bottom:var(--sp-4)">
+            <div class="dashboard-section-title">Taste Profile</div>
+            <partial name="_TasteProfile" model="Model.TasteProfile" />
+        </div>
+
+        <div class="card" style="padding:var(--sp-5)">
+            <div class="dashboard-section-title">Activity from Following</div>
+            @if (Model.FollowingActivity.Count == 0)
+            {
+                <p style="font-size:13px;color:var(--text-muted)">
+                    Nothing yet.
+                    <a asp-controller="Search" asp-action="Index">Follow some people from search results and profiles.</a>
+                </p>
+            }
+            else
+            {
+                <div style="display:flex;flex-direction:column;gap:var(--sp-4)">
+                    @foreach (var entry in Model.FollowingActivity)
+                    {
+                        <a class="flex gap-3" style="text-decoration:none;color:inherit"
+                           asp-controller="Entries" asp-action="Details" asp-route-id="@entry.Id">
+                            <div class="avatar" style="width:32px;height:32px;flex-shrink:0">
+                                @if (!string.IsNullOrEmpty(entry.AuthorProfilePictureUrl))
+                                {
+                                    <img src="@entry.AuthorProfilePictureUrl" alt="@entry.AuthorDisplayName" />
+                                }
+                                else
+                                {
+                                    <span class="avatar-fallback">@entry.AuthorDisplayName.FirstOrDefault()</span>
+                                }
+                            </div>
+                            <div>
+                                <div style="font-size:13px;color:var(--text-secondary)">
+                                    <strong style="color:var(--primary)">@entry.AuthorDisplayName</strong> logged
+                                    <strong style="color:var(--text-primary)">@entry.MediaTitle</strong>
+                                </div>
+                                <div style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono)">
+                                    @entry.CreatedAt.ToString("d MMM yyyy")
+                                    @if (entry.Rating is not null)
+                                    {
+                                        <text>&middot; &#9733; @entry.Rating.Value.ToString("0.0")</text>
+                                    }
+                                </div>
+                            </div>
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

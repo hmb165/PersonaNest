@@ -11,10 +11,12 @@ namespace PersonaNest.Services.Implementations;
 public class FollowService : IFollowService
 {
     private readonly IUnitOfWork _uow;
+    private readonly INotificationService _notificationService;
 
-    public FollowService(IUnitOfWork uow)
+    public FollowService(IUnitOfWork uow, INotificationService notificationService)
     {
         _uow = uow ?? throw new ArgumentNullException(nameof(uow));
+        _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
     }
 
     public async Task<ServiceResult> FollowAsync(
@@ -53,6 +55,9 @@ public class FollowService : IFollowService
         }, cancellationToken);
 
         await _uow.SaveChangesAsync(cancellationToken);
+
+        await _notificationService.NotifyNewFollowerAsync(followerId, targetUserId, cancellationToken);
+
         return ServiceResult.Success();
     }
 

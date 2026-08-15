@@ -16,6 +16,8 @@ namespace PersonaNest.Infrastructure.Seed;
 ///   <item>Themes, Categories and Tags are seeded through the migration itself (HasData).</item>
 ///   <item>Demo accounts are seeded <b>only in Development</b>, with passwords read from
 ///         configuration. Nothing is hard-coded.</item>
+///   <item>A starter media catalogue is seeded <b>only in Development</b>, attributed to the
+///         seeded admin account, so the trending rail and category pages aren't empty locally.</item>
 /// </list>
 /// </summary>
 public static class DbSeeder
@@ -28,8 +30,7 @@ public static class DbSeeder
         DevAccounts =
         {
             ("Seed:AdminPassword",     "admin",     "admin@personanest.local",     "Site Admin",      Roles.Admin),
-            ("Seed:ModeratorPassword", "moderator", "moderator@personanest.local", "Community Mod",   Roles.Moderator),
-            ("Seed:UserPassword",      "demo_user", "demo@personanest.local",      "Demo User",       Roles.User)
+            ("Seed:ModeratorPassword", "moderator", "moderator@personanest.local", "Community Mod",   Roles.Moderator)
         };
 
     public static async Task SeedAsync(
@@ -58,6 +59,7 @@ public static class DbSeeder
         if (isDevelopment)
         {
             await SeedDevelopmentAccountsAsync(userManager, configuration, logger);
+            await SeedCatalogueAsync(context, userManager, logger, cancellationToken);
         }
     }
 
@@ -131,6 +133,127 @@ public static class DbSeeder
             logger.LogInformation(
                 "Seeded development account {UserName} in role {Role}.", userName, role);
         }
+    }
+
+    // Matches CategoryConfiguration's HasData ids.
+    private const int CategoryGames = 1;
+    private const int CategoryMovies = 2;
+    private const int CategoryTvShows = 3;
+    private const int CategoryAnime = 4;
+    private const int CategoryManga = 5;
+    private const int CategoryBooks = 6;
+    private const int CategoryMusic = 7;
+
+    private static async Task SeedCatalogueAsync(
+        PersonaNestDbContext context,
+        UserManager<ApplicationUser> userManager,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        var admin = await userManager.FindByNameAsync("admin");
+        if (admin is null)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+
+        Media M(int categoryId, string title, string creator, int year, string description) => new()
+        {
+            Title = title,
+            Creator = creator,
+            ReleaseYear = year,
+            Description = description,
+            CategoryId = categoryId,
+            CreatedById = admin.Id,
+            CreatedAt = now
+        };
+
+        var items = new[]
+        {
+            // Games
+            M(CategoryGames, "Elden Ring", "FromSoftware", 2022, "An open-world action RPG set in the Lands Between, created with George R. R. Martin."),
+            M(CategoryGames, "The Legend of Zelda: Breath of the Wild", "Nintendo", 2017, "An open-world reinvention of the Zelda series set in a ruined kingdom of Hyrule."),
+            M(CategoryGames, "God of War Ragnarök", "Santa Monica Studio", 2022, "Kratos and Atreus journey through the Nine Realms as Fimbulwinter approaches."),
+            M(CategoryGames, "The Witcher 3: Wild Hunt", "CD Projekt Red", 2015, "Monster hunter Geralt of Rivia searches for his adopted daughter across a war-torn continent."),
+            M(CategoryGames, "Red Dead Redemption 2", "Rockstar Games", 2018, "An epic tale of outlaw life in America at the dawn of the modern age."),
+            M(CategoryGames, "Hollow Knight", "Team Cherry", 2017, "A hand-drawn metroidvania through the ruined insect kingdom of Hallownest."),
+            M(CategoryGames, "Baldur's Gate 3", "Larian Studios", 2023, "A party-based RPG set in the Forgotten Realms, built on Dungeons & Dragons rules."),
+            M(CategoryGames, "Hades", "Supergiant Games", 2020, "A roguelike dungeon crawler starring Zagreus, the son of Hades, escaping the Underworld."),
+
+            // Movies
+            M(CategoryMovies, "The Godfather", "Francis Ford Coppola", 1972, "The aging patriarch of an organized crime dynasty transfers control to his reluctant son."),
+            M(CategoryMovies, "Parasite", "Bong Joon-ho", 2019, "Greed and class discrimination threaten the newly formed symbiotic relationship between a poor family and a wealthy one."),
+            M(CategoryMovies, "Inception", "Christopher Nolan", 2010, "A thief who steals corporate secrets through dream-sharing technology is given a chance to erase his past crimes."),
+            M(CategoryMovies, "Pulp Fiction", "Quentin Tarantino", 1994, "The lives of two mob hitmen, a boxer, and a gangster's wife intertwine in four tales of violence."),
+            M(CategoryMovies, "The Dark Knight", "Christopher Nolan", 2008, "Batman faces the Joker, a criminal mastermind who plunges Gotham into anarchy."),
+            M(CategoryMovies, "Everything Everywhere All at Once", "Daniel Kwan & Daniel Scheinert", 2022, "An aging Chinese immigrant is swept into an adventure connecting her to parallel universes."),
+            M(CategoryMovies, "La La Land", "Damien Chazelle", 2016, "A jazz pianist and an aspiring actress fall in love while pursuing their dreams in Los Angeles."),
+
+            // TV Shows
+            M(CategoryTvShows, "Breaking Bad", "Vince Gilligan", 2008, "A chemistry teacher turned methamphetamine manufacturer navigates the drug trade."),
+            M(CategoryTvShows, "The Wire", "David Simon", 2002, "A layered look at Baltimore through the drug trade, the police, and the institutions around them."),
+            M(CategoryTvShows, "Succession", "Jesse Armstrong", 2018, "The Roy family battles for control of their global media and entertainment conglomerate."),
+            M(CategoryTvShows, "Chernobyl", "Craig Mazin", 2019, "A dramatization of the 1986 nuclear disaster and the sacrifices made to save Europe."),
+            M(CategoryTvShows, "The Sopranos", "David Chase", 1999, "New Jersey mob boss Tony Soprano balances family life with organized crime, in therapy."),
+            M(CategoryTvShows, "Stranger Things", "The Duffer Brothers", 2016, "Kids in a small town uncover a government conspiracy and a monster from another dimension."),
+            M(CategoryTvShows, "Fleabag", "Phoebe Waller-Bridge", 2016, "A grief-stricken, sharp-tongued woman navigates life and relationships in London."),
+
+            // Anime
+            M(CategoryAnime, "Spirited Away", "Studio Ghibli / Hayao Miyazaki", 2001, "A girl wandering into a world ruled by gods and witches must work in a bathhouse to free her parents."),
+            M(CategoryAnime, "Fullmetal Alchemist: Brotherhood", "Studio Bones", 2009, "Two brothers use alchemy in a quest to restore their bodies after a forbidden ritual goes wrong."),
+            M(CategoryAnime, "Attack on Titan", "Studio Wit / MAPPA", 2013, "Humanity fights for survival against man-eating Titans from behind massive walls."),
+            M(CategoryAnime, "Your Name", "Makoto Shinkai", 2016, "Two teenagers discover they are mysteriously swapping bodies across distance and time."),
+            M(CategoryAnime, "Cowboy Bebop", "Sunrise", 1998, "A ragtag crew of bounty hunters chase criminals across the solar system."),
+            M(CategoryAnime, "Death Note", "Madhouse", 2006, "A student gains a notebook that can kill anyone whose name is written in it."),
+            M(CategoryAnime, "Princess Mononoke", "Studio Ghibli / Hayao Miyazaki", 1997, "A prince becomes entangled in a struggle between forest gods and a mining colony."),
+
+            // Manga
+            M(CategoryManga, "Berserk", "Kentaro Miura", 1989, "A lone mercenary swordsman is pursued by demonic forces in a brutal medieval-inspired world."),
+            M(CategoryManga, "One Piece", "Eiichiro Oda", 1997, "A young pirate sets sail to find the legendary treasure known as One Piece."),
+            M(CategoryManga, "Vagabond", "Takehiko Inoue", 1998, "A fictionalized account of the life of legendary swordsman Miyamoto Musashi."),
+            M(CategoryManga, "Fullmetal Alchemist", "Hiromu Arakawa", 2001, "Two brothers use alchemy in a quest to restore their bodies after a forbidden ritual goes wrong."),
+            M(CategoryManga, "Chainsaw Man", "Tatsuki Fujimoto", 2018, "A young devil hunter merges with his chainsaw devil to survive Japan's criminal underworld."),
+            M(CategoryManga, "Vinland Saga", "Makoto Yukimura", 2005, "A young Viking's quest for revenge unfolds against the historical backdrop of medieval Europe."),
+
+            // Books
+            M(CategoryBooks, "Dune", "Frank Herbert", 1965, "A young heir becomes entangled in the politics and mysticism of the desert planet Arrakis."),
+            M(CategoryBooks, "1984", "George Orwell", 1949, "A dystopian vision of a totalitarian future under the constant surveillance of Big Brother."),
+            M(CategoryBooks, "The Hobbit", "J.R.R. Tolkien", 1937, "A reluctant hobbit joins a company of dwarves on a quest to reclaim their mountain home."),
+            M(CategoryBooks, "Crime and Punishment", "Fyodor Dostoevsky", 1866, "A destitute former student commits murder and grapples with the moral consequences."),
+            M(CategoryBooks, "The Name of the Wind", "Patrick Rothfuss", 2007, "A legendary figure recounts the true story of his life as a magician, thief, and musician."),
+            M(CategoryBooks, "Project Hail Mary", "Andy Weir", 2021, "A lone astronaut wakes with no memory on a mission to save humanity from extinction."),
+            M(CategoryBooks, "Norwegian Wood", "Haruki Murakami", 1987, "A man recalls his youth and the two women who shaped his life in 1960s Tokyo."),
+
+            // Music
+            M(CategoryMusic, "The Dark Side of the Moon", "Pink Floyd", 1973, "A concept album exploring conflict, greed, time, and mental illness."),
+            M(CategoryMusic, "To Pimp a Butterfly", "Kendrick Lamar", 2015, "A dense, jazz-inflected exploration of race, fame, and self-worth."),
+            M(CategoryMusic, "Rumours", "Fleetwood Mac", 1977, "A landmark rock album written amid the band's own tangled relationships."),
+            M(CategoryMusic, "OK Computer", "Radiohead", 1997, "An atmospheric album grappling with alienation and technology at the turn of the millennium."),
+            M(CategoryMusic, "Discovery", "Daft Punk", 2001, "A French house album blending disco, funk, and pop into a genre-defining sound."),
+            M(CategoryMusic, "Blonde", "Frank Ocean", 2016, "An introspective, genre-blurring album about memory, identity, and love.")
+        };
+
+        // Per-item idempotent (title + category), not "table is empty": a dev database that
+        // already has a few user-submitted or test rows should still get topped up with whatever
+        // starter titles are missing, rather than being skipped entirely.
+        var existing = await context.Media.IgnoreQueryFilters()
+            .Select(m => new { m.Title, m.CategoryId })
+            .ToListAsync(cancellationToken);
+        var existingSet = existing
+            .Select(m => (m.Title, m.CategoryId))
+            .ToHashSet();
+
+        var missing = items.Where(m => !existingSet.Contains((m.Title, m.CategoryId))).ToList();
+        if (missing.Count == 0)
+        {
+            return;
+        }
+
+        context.Media.AddRange(missing);
+        await context.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Seeded {Count} starter catalogue items.", missing.Count);
     }
 
     private static string Describe(IdentityResult result) =>

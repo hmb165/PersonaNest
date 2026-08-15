@@ -5,7 +5,7 @@
     ViewData["Title"] = $"{entry.MediaTitle} · {entry.AuthorDisplayName}";
 }
 
-<div style="display:grid;grid-template-columns:1fr 280px;gap:var(--sp-6);padding:var(--sp-6) var(--sp-8)">
+<div class="entry-detail-layout" style="padding:var(--sp-6) var(--sp-8)">
     <div>
         <div class="flex gap-3" style="align-items:flex-start;margin-bottom:var(--sp-6)">
             <div style="width:120px;height:180px;border-radius:var(--r-lg);overflow:hidden;flex-shrink:0;box-shadow:var(--shadow-lg);background:var(--bg-overlay)">
@@ -178,6 +178,24 @@
                     <a class="btn btn-secondary" style="width:100%" asp-controller="Auth" asp-action="Login">
                         + Add to Collection
                     </a>
+                }
+                @if (!entry.ViewerIsAuthor && User.IsSignedIn())
+                {
+                    <details>
+                        <summary class="btn btn-ghost" style="width:100%;cursor:pointer;list-style:none;text-align:center">&#9873; Report</summary>
+                        <form asp-controller="Entries" asp-action="Report" asp-route-id="@entry.Id" method="post"
+                              style="margin-top:var(--sp-2)">
+                            <select name="reason" class="form-select" style="width:100%;margin-bottom:var(--sp-2)">
+                                <option value="Spam">Spam</option>
+                                <option value="Inappropriate">Inappropriate</option>
+                                <option value="Duplicate">Duplicate</option>
+                                <option value="IncorrectInfo">Incorrect info</option>
+                                <option value="Harassment">Harassment</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <button type="submit" class="btn btn-secondary" style="width:100%">Submit report</button>
+                        </form>
+                    </details>
                 }
             </div>
         </div>

@@ -20,6 +20,11 @@ public class TasteProfile
 
     public DateTime ComputedAt { get; set; }
 
+    /// <summary>AI-generated personalized summary (bonus: AI). Null when no AI provider is
+    /// configured, or generation hasn't run yet.</summary>
+    public string? AiNarrative { get; set; }
+    public DateTime? AiNarrativeGeneratedAt { get; set; }
+
     public ICollection<TasteProfileCategory> Categories { get; set; }
         = new List<TasteProfileCategory>();
     public ICollection<TasteProfileTag> Tags { get; set; } = new List<TasteProfileTag>();

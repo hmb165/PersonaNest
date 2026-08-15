@@ -1,0 +1,85 @@
+@model ModeratorApplicationsViewModel
+@{
+    ViewData["Title"] = "Moderator Applications";
+    ViewData["Nav"] = "Admin";
+    var pageSize = 20;
+    var totalPages = pageSize <= 0 ? 0 : (int)Math.Ceiling(Model.TotalCount / (double)pageSize);
+}
+
+<div style="padding:var(--sp-6) var(--sp-8)">
+    <div style="font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--text-primary);margin-bottom:var(--sp-2)">
+        Moderator Applications <span style="font-size:16px;color:var(--text-muted);font-family:var(--font-mono)">(@Model.TotalCount)</span>
+    </div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:var(--sp-6)">
+        Pending applications from users requesting the Moderator role (§7).
+    </p>
+
+    @if (Model.Applications.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="empty-state-title">No pending applications</div>
+        </div>
+    }
+    else
+    {
+        <div style="display:flex;flex-direction:column;gap:var(--sp-4)">
+            @foreach (var application in Model.Applications)
+            {
+                <div class="mod-app-card">
+                    <div class="mod-app-avatar">
+                        @if (!string.IsNullOrEmpty(application.ProfilePictureUrl))
+                        {
+                            <img src="@application.ProfilePictureUrl" alt="@application.DisplayName" />
+                        }
+                        else
+                        {
+                            <span class="avatar-fallback" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">
+                                @application.DisplayName.FirstOrDefault()
+                            </span>
+                        }
+                    </div>
+                    <div class="mod-app-info">
+                        <div class="mod-app-user">@application.DisplayName</div>
+                        <div class="mod-app-meta">
+                            &#64;@application.UserName &middot; @application.ApplicantEntryCount entries
+                            &middot; Applied @application.AppliedAt.ToString("MMM d, yyyy")
+                        </div>
+                        <div class="mod-app-reason">"@application.Reason"</div>
+                        <div class="mod-app-actions">
+                            <a class="btn btn-ghost btn-sm" asp-controller="Profile" asp-action="Index"
+                               asp-route-userName="@application.UserName">View Profile</a>
+                            <form asp-controller="Admin" asp-action="ApplicationsApprove" asp-route-id="@application.Id" method="post">
+                                <button type="submit" class="btn btn-success btn-sm"
+                                        style="background:rgba(74,222,128,0.15);color:var(--success);border:1px solid rgba(74,222,128,0.3)">
+                                    &#10003; Approve
+                                </button>
+                            </form>
+                            <form asp-controller="Admin" asp-action="ApplicationsReject" asp-route-id="@application.Id" method="post">
+                                <button type="submit" class="btn btn-danger btn-sm">&#10005; Reject</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (totalPages > 1)
+        {
+            <div class="flex gap-2" style="justify-content:center;margin-top:var(--sp-6)">
+                @if (Model.Page > 1)
+                {
+                    <a class="btn btn-secondary btn-sm" asp-controller="Admin" asp-action="Applications"
+                       asp-route-page="@(Model.Page - 1)">&larr; Previous</a>
+                }
+                <span class="mono" style="align-self:center;color:var(--text-muted);font-size:13px">
+                    Page @Model.Page of @totalPages
+                </span>
+                @if (Model.Page < totalPages)
+                {
+                    <a class="btn btn-secondary btn-sm" asp-controller="Admin" asp-action="Applications"
+                       asp-route-page="@(Model.Page + 1)">Next &rarr;</a>
+                }
+            </div>
+        }
+    }
+</div>

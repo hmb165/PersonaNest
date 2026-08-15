@@ -36,6 +36,9 @@ public class PersonaNestDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Follow> Follows => Set<Follow>();
     public DbSet<Favorite> Favorites => Set<Favorite>();
 
+    // ── Notifications (Phase 15, SignalR)
+    public DbSet<Notification> Notifications => Set<Notification>();
+
     // ── Curation
     public DbSet<Collection> Collections => Set<Collection>();
     public DbSet<CollectionItem> CollectionItems => Set<CollectionItem>();

@@ -11,6 +11,10 @@ public sealed record TasteProfileDto
     public DateTime? MostActiveMonth { get; init; }
     public DateTime ComputedAt { get; init; }
 
+    /// <summary>AI-generated personalized summary (bonus: AI). Null when no provider is
+    /// configured or generation hasn't run yet.</summary>
+    public string? AiNarrative { get; init; }
+
     public IReadOnlyList<TasteCategorySliceDto> Categories { get; init; }
         = Array.Empty<TasteCategorySliceDto>();
 

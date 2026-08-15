@@ -1,3 +1,5 @@
+using PersonaNest.Domain.Enums;
+
 namespace PersonaNest.Services.DTOs.Responses;
 
 /// <summary>Banner, avatar, bio and accent colour for a profile page.</summary>
@@ -19,6 +21,20 @@ public sealed record ProfileHeaderDto
 
     public DateTime CreatedAt { get; init; }
 
+    /// <summary>The account's saved default privacy for new entries (§16's Privacy settings tab).</summary>
+    public Privacy DefaultEntryPrivacy { get; init; }
+
     public bool IsViewerSelf { get; init; }
     public bool IsFollowedByViewer { get; init; }
+}
+
+/// <summary>
+/// Raw appearance state for the edit form - unlike <see cref="ProfileHeaderDto.AccentColor"/>,
+/// <see cref="AccentColor"/> here is null when the user has no custom override, so the edit page
+/// can tell "no custom colour set" apart from "custom colour happens to match the theme".
+/// </summary>
+public sealed record AppearanceDto
+{
+    public int? ThemeId { get; init; }
+    public string? AccentColor { get; init; }
 }

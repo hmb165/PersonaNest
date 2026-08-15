@@ -15,6 +15,9 @@ public interface IUnitOfWork : IAsyncDisposable
     IEntryRepository Entries { get; }
     IMediaRepository Media { get; }
     IReportRepository Reports { get; }
+    ICollectionRepository Collections { get; }
+    IFavoriteRepository Favorites { get; }
+    INotificationRepository Notifications { get; }
 
     /// <summary>
     /// The generic repository for any entity without a specific one. Instances are cached per

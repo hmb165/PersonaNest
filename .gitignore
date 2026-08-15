@@ -6,6 +6,12 @@
 # dotenv files
 .env
 
+# Serilog rolling log files (§24)
+PersonaNest.Web/Logs/
+
+# Local Claude Code tooling config
+.claude/
+
 # User-specific files
 *.rsuser
 *.suo

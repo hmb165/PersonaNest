@@ -12,20 +12,41 @@ namespace PersonaNest.Services.Implementations;
 public class CommentService : ICommentService
 {
     private readonly IUnitOfWork _uow;
+    private readonly INotificationService _notificationService;
 
-    public CommentService(IUnitOfWork uow)
+    public CommentService(IUnitOfWork uow, INotificationService notificationService)
     {
         _uow = uow ?? throw new ArgumentNullException(nameof(uow));
+        _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
     }
+
+    private const int PageSize = 100;
 
     public async Task<IReadOnlyList<CommentDto>> GetForEntryAsync(
         int entryId, string? viewerId, CancellationToken cancellationToken = default)
     {
-        var flat = await _uow.Repository<Comment>().ListAsync(
-            c => c.EntryId == entryId,
-            CommentMappings.ToDto(viewerId),
-            q => q.OrderBy(c => c.CreatedAt),
-            page: 1, pageSize: 500, cancellationToken);
+        // Repository<T>.ListAsync silently clamps pageSize to MaxPageSize (100), so the previous
+        // "pageSize: 500" call was actually only ever reading an entry's first 100 comments -
+        // an active discussion thread could silently lose comments/replies past that (Phase 13
+        // finding). Pages through everything explicitly instead.
+        var flat = new List<CommentDto>();
+        var page = 1;
+        while (true)
+        {
+            var batch = await _uow.Repository<Comment>().ListAsync(
+                c => c.EntryId == entryId,
+                CommentMappings.ToDto(viewerId),
+                q => q.OrderBy(c => c.CreatedAt),
+                page, PageSize, cancellationToken);
+
+            flat.AddRange(batch);
+            if (batch.Count < PageSize)
+            {
+                break;
+            }
+
+            page++;
+        }
 
         var repliesByParent = flat
             .Where(c => c.ParentCommentId is not null)
@@ -80,6 +101,15 @@ public class CommentService : ICommentService
 
         await _uow.Repository<Comment>().AddAsync(comment, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
+
+        if (request.ParentCommentId is { } replyToId)
+        {
+            await _notificationService.NotifyNewReplyAsync(userId, replyToId, cancellationToken);
+        }
+        else
+        {
+            await _notificationService.NotifyNewCommentAsync(userId, request.EntryId, cancellationToken);
+        }
 
         return ServiceResult<int>.Success(comment.Id);
     }

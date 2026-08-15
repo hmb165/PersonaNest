@@ -1,0 +1,123 @@
+@model EditProfileViewModel
+@{
+    ViewData["Title"] = "Edit Profile";
+}
+
+<div class="page-shell">
+    <a class="settings-back" asp-controller="Profile" asp-action="Index" asp-route-userName="@Model.UserName">
+        &#8592; Back to profile
+    </a>
+
+    <div class="settings-layout">
+        <nav class="settings-nav" aria-label="Edit sections">
+            <a class="settings-nav-item active" href="#profile">Profile</a>
+            <a class="settings-nav-item" href="#appearance">Appearance</a>
+        </nav>
+
+        <div>
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+            @* ── Public profile ─────────────────────────────────────────── *@
+            <section class="settings-section" id="profile">
+                <h2 class="settings-section-title">Public Profile</h2>
+
+                <form asp-controller="Profile" asp-action="EditProfile" method="post" novalidate>
+                    <div class="form-group">
+                        <label class="form-label" asp-for="Profile.DisplayName"></label>
+                        <input class="form-input" asp-for="Profile.DisplayName" />
+                        <span asp-validation-for="Profile.DisplayName"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" asp-for="Profile.Bio"></label>
+                        <textarea class="form-textarea" asp-for="Profile.Bio" style="min-height:90px"></textarea>
+                        <span asp-validation-for="Profile.Bio"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" asp-for="Profile.ProfilePictureUrl"></label>
+                        <input class="form-input" asp-for="Profile.ProfilePictureUrl"
+                               placeholder="https://…" />
+                        <div class="form-hint">
+                            A URL for now. Uploading files arrives with the entry cover upload in Phase 7.
+                        </div>
+                        <span asp-validation-for="Profile.ProfilePictureUrl"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" asp-for="Profile.BannerUrl"></label>
+                        <input class="form-input" asp-for="Profile.BannerUrl" placeholder="https://…" />
+                        <span asp-validation-for="Profile.BannerUrl"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Save Profile</button>
+                </form>
+            </section>
+
+            @* ── Appearance ─────────────────────────────────────────────── *@
+            <section class="settings-section" id="appearance">
+                <h2 class="settings-section-title">Appearance</h2>
+                <p style="font-size:13px;color:var(--text-muted);margin-bottom:var(--sp-4)">
+                    PersonaNest uses one cinematic dark palette. A theme picks the accent pair
+                    applied across your profile; a custom colour overrides it.
+                </p>
+
+                <form asp-controller="Profile" asp-action="EditAppearance" method="post" novalidate>
+                    <div class="form-group">
+                        <label class="form-label">Theme</label>
+                        <div class="swatch-row">
+                            @foreach (var theme in Model.Themes)
+                            {
+                                <label title="@theme.Name" style="display:inline-flex">
+                                    <input type="radio" asp-for="Appearance.ThemeId" value="@theme.Id"
+                                           class="visually-hidden" />
+                                    <span class="swatch" style="background:@theme.PrimaryHex"></span>
+                                </label>
+                            }
+                        </div>
+                        <span asp-validation-for="Appearance.ThemeId"></span>
+                    </div>
+
+                    <div class="form-group">
+                        @{ var hasCustomColor = !string.IsNullOrWhiteSpace(Model.Appearance.AccentColor); }
+                        <label class="form-label" style="display:flex;align-items:center;gap:8px;font-weight:400">
+                            <input type="checkbox" id="useCustomColor" checked="@(hasCustomColor ? "checked" : null)" />
+                            Use a custom accent colour instead of my theme
+                        </label>
+
+                        <div class="flex gap-2" style="align-items:center;margin-top:var(--sp-2)">
+                            <input type="color" class="color-picker-input" asp-for="Appearance.AccentColor"
+                                   value="@(hasCustomColor ? Model.Appearance.AccentColor : "#7c5cfc")"
+                                   disabled="@(hasCustomColor ? null : "disabled")" />
+                            <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted)">
+                                @(hasCustomColor ? Model.Appearance.AccentColor : "Using theme accent")
+                            </span>
+                        </div>
+                        <div class="form-hint">
+                            Unchecked, your theme's accent applies. Checked, this colour overrides it -
+                            uncheck and save to go back to your theme.
+                        </div>
+                        <span asp-validation-for="Appearance.AccentColor"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Save Appearance</button>
+                </form>
+            </section>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var toggle = document.getElementById('useCustomColor');
+            var colorInput = document.getElementById('Appearance_AccentColor');
+            if (toggle && colorInput) {
+                toggle.addEventListener('change', function () {
+                    colorInput.disabled = !toggle.checked;
+                });
+            }
+        })();
+    </script>
+}

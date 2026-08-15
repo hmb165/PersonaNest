@@ -327,7 +327,10 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   border-bottom: 1px solid var(--border);
   padding: 0 var(--sp-6);
   height: 60px;
-  display: flex; align-items: center; gap: var(--sp-6);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--sp-4);
   position: sticky; top: 0; z-index: 100;
 }
 .navbar-brand {
@@ -337,13 +340,16 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   color: var(--text-primary);
 }
 .navbar-brand-mark {
-  width: 28px; height: 28px;
+  width: 32px; height: 32px;
   background: var(--primary);
   border-radius: var(--r-sm);
   display: flex; align-items: center; justify-content: center;
   font-size: 15px; color: #fff;
 }
-.navbar-nav { display: flex; gap: var(--sp-1); }
+/* Home / Search / Dashboard - centered regardless of how wide the left/right groups are. */
+.navbar-center { display: flex; justify-content: center; gap: var(--sp-1); }
+/* Signed-in actions, notification bell, avatar (or Sign in/Sign up) - always right-aligned. */
+.navbar-right { display: flex; align-items: center; gap: var(--sp-2); justify-self: end; }
 .navbar-link {
   padding: 6px 12px;
   border-radius: var(--r-sm);
@@ -353,7 +359,6 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 .navbar-link:hover { color: var(--text-primary); background: var(--bg-overlay); }
 .navbar-link.active { color: var(--primary); background: var(--primary-muted); }
-.navbar-spacer { flex: 1; }
 .navbar-search {
   display: flex; align-items: center; gap: var(--sp-2);
   background: var(--bg-overlay);
@@ -368,6 +373,127 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .navbar-search input { background: none; border: none; outline: none; color: var(--text-primary); font-family: var(--font-body); font-size: 13px; width: 100%; }
 .navbar-avatar { width: 32px; height: 32px; border-radius: 50%; overflow: hidden; border: 2px solid var(--primary); cursor: pointer; }
 .navbar-avatar img { width: 100%; height: 100%; }
+
+/* Mobile navigation ("Hamburger navbar" — design system Responsive Breakpoints, <768px, also
+   the point below which .navbar-nav and the d-md/d-lg action buttons hide). Toggler is a plain
+   button so it works with zero JS beyond Bootstrap's bundled Collapse plugin (already loaded). */
+.navbar-toggler {
+  /* Shown/hidden by the Bootstrap "d-lg-none" utility already used elsewhere in this navbar,
+     e.g. .navbar-nav's "d-none d-lg-flex" - so it flips at the same breakpoint the rest of the
+     nav does. This rule only supplies the visual style for when it's visible. */
+  display: flex;
+  align-items: center; justify-content: center;
+  width: 44px; height: 44px;
+  background: transparent; border: 1px solid var(--border); border-radius: var(--r-md);
+  color: var(--text-primary); font-size: 20px; line-height: 1;
+  cursor: pointer; flex-shrink: 0;
+}
+.navbar-toggler:hover { background: var(--bg-overlay); }
+.navbar-toggler:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.mobile-nav-panel {
+  display: flex; flex-direction: column; gap: 2px;
+  background: rgba(9,9,15,0.97);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+}
+.mobile-nav-panel .navbar-link,
+.mobile-nav-panel .btn {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: 44px;
+  padding: 10px var(--sp-3);
+  font-size: 15px;
+}
+.mobile-nav-panel form { width: 100%; }
+.mobile-nav-panel form .btn { width: 100%; }
+.mobile-nav-panel hr { border-color: var(--border); margin: var(--sp-2) 0; }
+
+/* Notification bell (Phase 15, SignalR real-time notifications) */
+.notification-bell { position: relative; }
+.notification-bell-toggle {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px;
+  background: transparent; border: 1px solid var(--border); border-radius: var(--r-md);
+  font-size: 17px; cursor: pointer; flex-shrink: 0;
+}
+.notification-bell-toggle:hover { background: var(--bg-overlay); }
+.notification-bell-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.notification-bell-badge {
+  position: absolute; top: 2px; right: 2px;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent); color: #fff;
+  border-radius: var(--r-full);
+  font-size: 10px; font-weight: 700; font-family: var(--font-mono);
+  line-height: 1;
+}
+.notification-bell-panel {
+  position: absolute; top: calc(100% + 8px); right: 0;
+  width: 320px; max-width: calc(100vw - var(--sp-6));
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  overflow: hidden;
+}
+.notification-bell-panel-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px; font-weight: 600; color: var(--text-primary);
+}
+.notification-bell-panel-header a { font-size: 12px; font-weight: 500; color: var(--primary); }
+.notification-bell-panel-list { max-height: 320px; overflow-y: auto; }
+.notification-bell-item {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  transition: background var(--transition);
+}
+.notification-bell-item:last-child { border-bottom: none; }
+.notification-bell-item:hover { background: var(--bg-overlay); color: var(--text-primary); }
+.notification-bell-item-unread { background: var(--primary-muted); }
+.notification-bell-item-message { font-size: 13px; }
+.notification-bell-item-time { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+.notification-bell-empty { padding: var(--sp-5) var(--sp-4); font-size: 13px; color: var(--text-muted); text-align: center; }
+
+/* /Notifications full history list */
+.notification-list { display: flex; flex-direction: column; gap: var(--sp-2); }
+.notification-row {
+  display: flex; align-items: center; gap: var(--sp-3);
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: var(--sp-3) var(--sp-4);
+}
+.notification-row-unread { border-color: rgba(124,92,252,0.4); background: var(--primary-muted); }
+.notification-row-link {
+  display: flex; align-items: center; gap: var(--sp-3);
+  flex: 1; min-width: 0;
+  color: inherit; text-decoration: none;
+}
+.notification-row-message { font-size: 14px; color: var(--text-primary); }
+.notification-row-time { font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px; }
+
+/* Live toast for a notification that arrives over SignalR while the page is open */
+.notification-toast {
+  position: fixed; top: calc(60px + var(--sp-4)); right: var(--sp-4);
+  max-width: 340px;
+  z-index: 300;
+  box-shadow: var(--shadow-lg);
+  animation: notification-toast-in 0.2s ease-out;
+}
+.notification-toast-out { opacity: 0; transform: translateX(16px); transition: all 0.3s ease-in; }
+@keyframes notification-toast-in {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (max-width: 480px) {
+  .notification-bell-panel { position: fixed; top: 60px; right: var(--sp-3); left: var(--sp-3); width: auto; }
+  .notification-toast { left: var(--sp-3); right: var(--sp-3); max-width: none; }
+}
+
 /* ══════════════════════════════════════════════════════════════════
    7. BADGES & TAGS
    ══════════════════════════════════════════════════════════════════ */
@@ -427,7 +553,12 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 /* ══════════════════════════════════════════════════════════════════
    9. TABLES
    ══════════════════════════════════════════════════════════════════ */
-.table-wrap { border-radius: var(--r-lg); border: 1px solid var(--border); overflow: hidden; }
+/* overflow-x: auto (not the "hidden" this rule used to have) so a table wider than its wrapper
+   scrolls horizontally instead of silently clipping columns off-screen - the design system's own
+   Responsive Breakpoints spec calls for "Tables: horizontal scroll" below 768px, and every admin/
+   moderation table is wide enough to need it (Phase 14 finding: Admin Users' table was 224px
+   wider than its wrapper on a 375px phone, cutting off the Joined and Actions columns entirely). */
+.table-wrap { border-radius: var(--r-lg); border: 1px solid var(--border); overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .data-table { width: 100%; border-collapse: collapse; }
 .data-table thead { background: var(--bg-overlay); }
 .data-table th {
@@ -491,21 +622,68 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   min-height: 420px;
   display: flex;
   align-items: center;
+  gap: var(--sp-8);
   overflow: hidden;
   padding: var(--sp-16) var(--sp-10);
 }
+/* Rotating category imagery, right of the hero copy - hidden below desktop widths so it never
+   competes with the headline for space on a phone/tablet (Phase 14's mobile-first pattern). */
+.home-hero-visual {
+  display: block;
+  position: relative; z-index: 1;
+  flex: 1; align-self: stretch;
+  min-height: 320px;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.home-hero-visual-slide {
+  position: absolute; inset: 0;
+  opacity: 0;
+  transform: translateX(40px);
+  transition: opacity 1s ease, transform 1s ease;
+}
+.home-hero-visual-slide.active { opacity: 1; transform: translateX(0); z-index: 1; }
+.home-hero-visual-slide img { width: 100%; height: 100%; object-fit: cover; }
+.home-hero-visual-gradient {
+  position: absolute; inset: 0; z-index: 2;
+  background: linear-gradient(120deg, rgba(124,92,252,0.55) 0%, rgba(9,9,15,0.2) 45%, rgba(9,9,15,0.9) 100%);
+  pointer-events: none;
+}
 .home-hero-bg {
   position: absolute; inset: 0;
-  background: linear-gradient(135deg, #09090f 0%, #13102a 50%, #09090f 100%);
+  background: linear-gradient(135deg, #0d0a1f 0%, #1d1442 35%, #2a1447 60%, #0d0a1f 100%);
+  background-size: 200% 200%;
+  animation: heroGradientShift 14s ease infinite;
   z-index: 0;
 }
 .home-hero-glow {
   position: absolute;
   width: 500px; height: 500px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(124,92,252,0.18) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(124,92,252,0.30) 0%, transparent 70%);
   top: -100px; right: -50px;
   z-index: 0;
+  animation: heroGlowPulse 6s ease-in-out infinite;
+}
+.home-hero-glow-secondary {
+  position: absolute;
+  width: 420px; height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,107,107,0.22) 0%, transparent 70%);
+  bottom: -140px; left: -60px;
+  z-index: 0;
+  animation: heroGlowPulse 8s ease-in-out infinite reverse;
+}
+@keyframes heroGradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes heroGlowPulse {
+  0%, 100% { opacity: 0.75; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-bg, .home-hero-glow, .home-hero-glow-secondary { animation: none; }
 }
 .home-hero-content { position: relative; z-index: 1; max-width: 540px; }
 .home-hero-eyebrow {
@@ -608,11 +786,20 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 /* ══════════════════════════════════════════════════════════════════
    PAGE: PROFILE
    ══════════════════════════════════════════════════════════════════ */
+.profile-container {
+  /* Soft wash of the viewer's chosen accent, fading into the normal dark ground - this is what
+     makes "changing your color" visibly change the profile page background, not just its accents. */
+  background: radial-gradient(ellipse 900px 480px at 50% 0%,
+    color-mix(in srgb, var(--primary) 16%, transparent) 0%,
+    transparent 70%);
+}
 .profile-banner {
   height: 220px;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #1a1040 0%, #0d0d20 100%);
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--primary) 55%, #0d0d20) 0%,
+    #0d0d20 100%);
 }
 .profile-banner img { width: 100%; height: 100%; object-fit: cover; }
 .profile-banner-overlay {
@@ -623,6 +810,15 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   position: absolute; top: var(--sp-4); right: var(--sp-4);
   display: flex; gap: var(--sp-2);
 }
+.icon-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  background: rgba(9,9,15,0.6); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.15); border-radius: 50%;
+  color: #fff; font-size: 15px; line-height: 1;
+  cursor: pointer; transition: background var(--transition);
+}
+.icon-btn:hover { background: rgba(9,9,15,0.85); }
 .profile-header {
   padding: 0 var(--sp-8) var(--sp-6);
   display: flex; gap: var(--sp-5); align-items: flex-end;
@@ -654,7 +850,10 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   display: flex; gap: 0;
   border-bottom: 1px solid var(--border);
   padding: 0 var(--sp-8);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
+.profile-tab { flex-shrink: 0; }
 .profile-tab {
   padding: var(--sp-4) var(--sp-5);
   font-size: 14px; font-weight: 600;
@@ -684,6 +883,11 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .profile-fav-slot:hover { border-color: var(--primary); }
 .profile-fav-slot img { width: 100%; height: 100%; }
 /* Taste profile */
+.taste-narrative {
+  font-size: 13px; font-style: italic; color: var(--text-secondary); line-height: 1.6;
+  background: var(--bg-overlay); border-left: 3px solid var(--primary);
+  border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-5);
+}
 .taste-profile { display: flex; flex-direction: column; gap: var(--sp-4); }
 .taste-bar-label { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; }
 .taste-bar-label span:first-child { color: var(--text-secondary); }
@@ -764,7 +968,11 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .admin-link:hover { background: var(--bg-overlay); color: var(--text-primary); }
 .admin-link.active { background: var(--primary-muted); color: var(--primary); }
 .admin-link-icon { font-size: 15px; width: 20px; text-align: center; }
-.admin-main { padding: var(--sp-6) var(--sp-8); }
+/* min-width: 0 overrides the grid item default of min-width: auto, which otherwise refuses to
+   shrink .admin-main below its content's intrinsic width (here, four stat cards) even though
+   .admin-layout's track is sized "1fr" - a classic CSS Grid trap that was quietly forcing the
+   whole Admin section wider than the viewport on mobile even after the sidebar was fixed. */
+.admin-main { padding: var(--sp-6) var(--sp-8); min-width: 0; }
 .admin-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-4); margin-bottom: var(--sp-6); }
 /* ══════════════════════════════════════════════════════════════════
    PAGE: ENTRY FORM
@@ -914,7 +1122,19 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .theme-swatch-preview { height: 48px; border-radius: var(--r-md); margin-bottom: var(--sp-2); }
 .theme-swatch-name { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
 /* Settings page */
+.settings-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin: var(--sp-6) 0 0 var(--sp-8);
+  font-size: 13px; font-weight: 500; color: var(--text-secondary);
+  transition: color var(--transition);
+}
+.settings-back:hover { color: var(--primary); }
 .settings-layout { display: grid; grid-template-columns: 200px 1fr; gap: var(--sp-6); padding: var(--sp-6) var(--sp-8); }
+.color-picker-input {
+  width: 44px; height: 36px; padding: 2px;
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  background: var(--bg-overlay); cursor: pointer;
+}
 .settings-nav { display: flex; flex-direction: column; gap: 2px; }
 .settings-nav-item {
   padding: var(--sp-3) var(--sp-4);
@@ -930,21 +1150,38 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
    RESPONSIVE
    ══════════════════════════════════════════════════════════════════ */
 @media (max-width: 1024px) {
-  .auth-page { grid-template-columns: 1fr; }
-  .auth-visual { display: none; }
   .profile-grid { grid-template-columns: 1fr; }
   .dashboard-layout { grid-template-columns: 1fr; }
   .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+  /* .admin-layout's 200px fixed sidebar had no responsive rule at all - forced ~900px of content
+     onto a 375px phone (Phase 14 finding). Stacks like every other two-column layout here. */
+  .admin-layout { grid-template-columns: 1fr; }
+  .admin-sidebar {
+    display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    border-right: none; border-bottom: 1px solid var(--border);
+    padding: var(--sp-3) var(--sp-4);
+    gap: 4px;
+  }
+  .admin-sidebar-title { display: none; }
+  .admin-link { flex-shrink: 0; white-space: nowrap; }
   .media-detail-hero { grid-template-columns: 160px 1fr; }
   .home-hero-title { font-size: 38px; }
+  /* The rotating hero imagery is a desktop-only flourish - below this width there isn't room
+     for it next to the headline without pushing the CTA off-screen. */
+  .home-hero-visual { display: none; }
   .admin-stats { grid-template-columns: repeat(2, 1fr); }
   .entry-form-layout { grid-template-columns: 1fr; }
   .settings-layout { grid-template-columns: 1fr; }
 }
 @media (max-width: 768px) {
-  .navbar-nav { display: none; }
   .profile-header { flex-direction: column; align-items: flex-start; }
-  .profile-stats { gap: var(--sp-4); }
+  .profile-stats {
+    gap: var(--sp-4);
+    padding: var(--sp-4) var(--sp-5);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .profile-stat { flex-shrink: 0; }
   .media-detail-hero { grid-template-columns: 1fr; }
   .media-detail-cover { max-width: 160px; }
   .profile-favorites { grid-template-columns: repeat(3, 1fr); }
@@ -1006,6 +1243,19 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 @media (max-width: 1023px) {
   .auth-shell { grid-template-columns: 1fr; }
   .auth-visual { display: none; }
+}
+@media (max-width: 480px) {
+  /* .auth-panel's padding (var(--sp-16) var(--sp-12) = 64px/48px) is sized for the desktop split
+     panel; on a phone it eats over half the viewport width and pushes the form below the fold. */
+  .auth-panel { padding: var(--sp-8) var(--sp-5); }
+}
+
+/* Entry Details: main content + a fixed 280px Actions/About-the-Media sidebar. Was an inline
+   style with no responsive rule at all - forced a 280px column onto a 375px phone and pushed the
+   page into horizontal scroll (Phase 14 finding). */
+.entry-detail-layout { display: grid; grid-template-columns: 1fr 280px; gap: var(--sp-6); }
+@media (max-width: 768px) {
+  .entry-detail-layout { grid-template-columns: 1fr; padding: var(--sp-5) var(--sp-4) !important; }
 }
 
 /* Page container used by the profile and settings pages */

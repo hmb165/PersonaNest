@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using PersonaNest.Domain.Abstractions;
 using PersonaNest.Domain.Constants;
 using PersonaNest.Domain.Entities;
@@ -21,11 +22,14 @@ public class AdminService : IAdminService
 {
     private readonly IUnitOfWork _uow;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ILogger<AdminService> _logger;
 
-    public AdminService(IUnitOfWork uow, UserManager<ApplicationUser> userManager)
+    public AdminService(
+        IUnitOfWork uow, UserManager<ApplicationUser> userManager, ILogger<AdminService> logger)
     {
         _uow = uow ?? throw new ArgumentNullException(nameof(uow));
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<AdminStatsDto> GetDashboardStatsAsync(
@@ -104,6 +108,20 @@ public class AdminService : IAdminService
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        // AdminController.Ban binds Reason as a raw form parameter rather than a bound-and-
+        // validated BanUserRequest, so BanUserRequest's [Required]/[StringLength] data
+        // annotations never run through ModelState - checked explicitly here instead. A null
+        // reason would otherwise NullReferenceException on the .Trim() below.
+        if (string.IsNullOrWhiteSpace(request.Reason) || request.Reason.Trim().Length < 3)
+        {
+            return ServiceResult.Failure("A ban reason of at least 3 characters is required.");
+        }
+
+        if (request.Reason.Length > 300)
+        {
+            return ServiceResult.Failure("Ban reason cannot exceed 300 characters.");
+        }
+
         var user = await _userManager.FindByIdAsync(request.UserId);
         if (user is null)
         {
@@ -112,6 +130,8 @@ public class AdminService : IAdminService
 
         if (await _userManager.IsInRoleAsync(user, Roles.Admin))
         {
+            _logger.LogWarning(
+                "Ban rejected: {UserName} is an Administrator and cannot be banned.", user.UserName);
             return ServiceResult.Failure("Administrators cannot be banned.");
         }
 
@@ -125,6 +145,9 @@ public class AdminService : IAdminService
 
         if (!lockout.Succeeded)
         {
+            _logger.LogError(
+                "Ban failed for {UserName}: {Errors}",
+                user.UserName, string.Join("; ", lockout.Errors.Select(e => e.Description)));
             return ServiceResult.Failure(lockout.Errors.Select(e => e.Description).ToArray());
         }
 
@@ -138,6 +161,7 @@ public class AdminService : IAdminService
             await _uow.SaveChangesAsync(cancellationToken);
         }
 
+        _logger.LogWarning("User {UserName} banned. Reason: {Reason}", user.UserName, request.Reason);
         return ServiceResult.Success();
     }
 
@@ -153,6 +177,9 @@ public class AdminService : IAdminService
         var lockout = await _userManager.SetLockoutEndDateAsync(user, null);
         if (!lockout.Succeeded)
         {
+            _logger.LogError(
+                "Unban failed for {UserName}: {Errors}",
+                user.UserName, string.Join("; ", lockout.Errors.Select(e => e.Description)));
             return ServiceResult.Failure(lockout.Errors.Select(e => e.Description).ToArray());
         }
 
@@ -165,6 +192,7 @@ public class AdminService : IAdminService
             await _uow.SaveChangesAsync(cancellationToken);
         }
 
+        _logger.LogInformation("User {UserName} unbanned.", user.UserName);
         return ServiceResult.Success();
     }
 
@@ -267,6 +295,68 @@ public class AdminService : IAdminService
             queue.PageSize);
     }
 
+    public Task<int> CountResolvedReportsSinceAsync(
+        DateTime since, CancellationToken cancellationToken = default)
+        => _uow.Reports.CountResolvedSinceAsync(since, cancellationToken);
+
+    public Task<ServiceResult> ResolveReportAsync(
+        ReportTargetType targetType, int reportId, string moderatorId, string? notes,
+        CancellationToken cancellationToken = default)
+        => ResolveOrDismissAsync(targetType, reportId, moderatorId, ReportStatus.Resolved, notes, cancellationToken);
+
+    public Task<ServiceResult> DismissReportAsync(
+        ReportTargetType targetType, int reportId, string moderatorId, string? notes,
+        CancellationToken cancellationToken = default)
+        => ResolveOrDismissAsync(targetType, reportId, moderatorId, ReportStatus.Dismissed, notes, cancellationToken);
+
+    private async Task<ServiceResult> ResolveOrDismissAsync(
+        ReportTargetType targetType, int reportId, string moderatorId, ReportStatus newStatus,
+        string? notes, CancellationToken cancellationToken)
+    {
+        // ResolutionNotes maps to a nvarchar(2000) column on every *Report configuration; an
+        // over-length value would otherwise fail at SaveChanges with a raw DB error (§12).
+        if (notes?.Length > 2000)
+        {
+            return ServiceResult.Failure("Notes cannot exceed 2000 characters.");
+        }
+
+        var found = await _uow.Reports.ResolveAsync(
+            targetType, reportId, moderatorId, newStatus, notes, cancellationToken);
+
+        if (!found)
+        {
+            _logger.LogWarning(
+                "{TargetType} report {ReportId} could not be {Status} by {ModeratorId}: not open.",
+                targetType, reportId, newStatus, moderatorId);
+            return ServiceResult.Failure("That report no longer needs review.");
+        }
+
+        await _uow.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation(
+            "{TargetType} report {ReportId} {Status} by {ModeratorId}.",
+            targetType, reportId, newStatus, moderatorId);
+        return ServiceResult.Success();
+    }
+
+    public async Task<UserCardDto?> GetUserByIdAsync(
+        string userId, CancellationToken cancellationToken = default)
+    {
+        var item = await _uow.Repository<ApplicationUser>().FirstOrDefaultAsync(
+            u => u.Id == userId, UserMappings.ToAdminCardDto, cancellationToken);
+
+        if (item is null)
+        {
+            return null;
+        }
+
+        var user = await _userManager.FindByIdAsync(userId);
+        var roles = user is null
+            ? Array.Empty<string>()
+            : (await _userManager.GetRolesAsync(user)).ToArray();
+
+        return item with { Roles = roles };
+    }
+
     private async Task<ServiceResult> ChangeRoleAsync(string userId, string role, bool add)
     {
         if (!Roles.All.Contains(role))
@@ -290,8 +380,17 @@ public class AdminService : IAdminService
             ? await _userManager.AddToRoleAsync(user, role)
             : await _userManager.RemoveFromRoleAsync(user, role);
 
-        return result.Succeeded
-            ? ServiceResult.Success()
-            : ServiceResult.Failure(result.Errors.Select(e => e.Description).ToArray());
+        if (!result.Succeeded)
+        {
+            _logger.LogError(
+                "Role change failed for {UserName} ({Action} {Role}): {Errors}",
+                user.UserName, add ? "add" : "remove", role,
+                string.Join("; ", result.Errors.Select(e => e.Description)));
+            return ServiceResult.Failure(result.Errors.Select(e => e.Description).ToArray());
+        }
+
+        _logger.LogInformation(
+            "{UserName} {Action} role {Role}.", user.UserName, add ? "granted" : "removed from", role);
+        return ServiceResult.Success();
     }
 }

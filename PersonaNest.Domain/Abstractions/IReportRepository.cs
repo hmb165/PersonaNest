@@ -33,4 +33,23 @@ public interface IReportRepository
     /// queue is defined by open reports.
     /// </summary>
     Task<int> CountMediaAwaitingReviewAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reports resolved (not dismissed) on or after <paramref name="since"/>, across all three
+    /// tables - the Moderator Dashboard's "Resolved (30d)" stat.
+    /// </summary>
+    Task<int> CountResolvedSinceAsync(DateTime since, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Marks one still-<see cref="ReportStatus.Open"/> report <paramref name="newStatus"/>, in
+    /// whichever of the three tables <paramref name="targetType"/> indicates - the id alone is
+    /// ambiguous across them (decision D-4). Mutates the tracked entity only; the caller commits
+    /// through <see cref="IUnitOfWork.SaveChangesAsync"/>, matching every other write in this
+    /// codebase. Returns false when no matching <em>open</em> report exists (already handled, or
+    /// never existed), so the service can turn that into a friendly message instead of silently
+    /// overwriting a previous resolution.
+    /// </summary>
+    Task<bool> ResolveAsync(
+        ReportTargetType targetType, int reportId, string moderatorId, ReportStatus newStatus,
+        string? resolutionNotes, CancellationToken cancellationToken = default);
 }

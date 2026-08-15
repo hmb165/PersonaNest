@@ -15,4 +15,10 @@
     <ProjectReference Include="..\PersonaNest.Infrastructure\PersonaNest.Infrastructure.csproj" />
   </ItemGroup>
 
+  <!-- Phase 13: lets PersonaNest.Tests mock TasteProfileCalculator's internal row projection
+       type without making it part of this assembly's public surface. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="PersonaNest.Tests" />
+  </ItemGroup>
+
 </Project>

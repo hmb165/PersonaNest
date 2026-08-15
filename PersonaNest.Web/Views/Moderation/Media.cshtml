@@ -1,0 +1,58 @@
+@model ReportQueueViewModel
+@{
+    ViewData["Title"] = "Media to Review";
+    ViewData["Nav"] = "Moderation";
+}
+
+<div style="padding:var(--sp-6) var(--sp-8)">
+    <div style="font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--text-primary);margin-bottom:var(--sp-2)">
+        Media to Review <span style="font-size:16px;color:var(--text-muted);font-family:var(--font-mono)">(@Model.TotalCount)</span>
+    </div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:var(--sp-6)">
+        Media items with at least one open report. Media has no separate approval queue - new
+        submissions are approved automatically and reach this list only if reported.
+    </p>
+
+    @if (Model.Items.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="empty-state-title">Nothing to review</div>
+            <p>No media items have open reports right now.</p>
+        </div>
+    }
+    else
+    {
+        <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
+            @foreach (var report in Model.Items)
+            {
+                <div class="card" style="padding:var(--sp-5);display:flex;align-items:center;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap">
+                    <div>
+                        <a asp-controller="Media" asp-action="Details" asp-route-id="@report.TargetId"
+                           style="color:var(--primary);font-weight:600">@report.TargetLabel</a>
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
+                            Reported by &#64;@report.ReporterUserName &middot; @report.Reason
+                            &middot; @report.CreatedAt.ToString("MMM d, yyyy")
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(report.TargetSnippet))
+                        {
+                            <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">@report.TargetSnippet</div>
+                        }
+                    </div>
+                    <div class="flex gap-2">
+                        <form asp-controller="Moderation" asp-action="ResolveReport"
+                              asp-route-targetType="Media" asp-route-id="@report.Id" method="post">
+                            <button type="submit" class="btn btn-success btn-sm"
+                                    style="background:rgba(74,222,128,0.15);color:var(--success);border:1px solid rgba(74,222,128,0.3)">
+                                &#10003; Resolve
+                            </button>
+                        </form>
+                        <form asp-controller="Moderation" asp-action="DismissReport"
+                              asp-route-targetType="Media" asp-route-id="@report.Id" method="post">
+                            <button type="submit" class="btn btn-ghost btn-sm">Dismiss</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

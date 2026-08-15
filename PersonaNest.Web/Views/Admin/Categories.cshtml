@@ -1,0 +1,118 @@
+@model CategoryManagementViewModel
+@{
+    ViewData["Title"] = "Category Management";
+    ViewData["Nav"] = "Admin";
+}
+
+<div style="padding:var(--sp-6) var(--sp-8)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-6)">
+        <div style="font-family:var(--font-display);font-size:22px;font-weight:600;color:var(--text-primary)">
+            Categories <span style="font-size:15px;color:var(--text-muted);font-family:var(--font-mono)">(@Model.Categories.Count)</span>
+        </div>
+        <a class="btn btn-primary btn-sm" asp-controller="Admin" asp-action="CategoriesCreate">+ New Category</a>
+    </div>
+
+    <div class="alert alert-info" style="margin-bottom:var(--sp-5)">
+        <span class="alert-icon">&#8505;</span>
+        <div class="alert-body">
+            <div class="alert-title">Categories cannot be deleted while media reference them.</div>
+            The Media &rarr; Category relationship uses <span class="mono">DeleteBehavior.Restrict</span>.
+            Reassign or remove the media first.
+        </div>
+    </div>
+
+    <div class="table-wrap" style="margin-bottom:var(--sp-6)">
+        <table class="data-table">
+            <thead><tr><th>Icon</th><th>Name</th><th>Slug</th><th>Colour Token</th><th>Media</th><th>Actions</th></tr></thead>
+            <tbody>
+                @foreach (var category in Model.Categories)
+                {
+                    <tr>
+                        <td style="font-size:20px">@category.Icon</td>
+                        <td>
+                            <strong>@category.Name</strong>
+                            @if (!string.IsNullOrWhiteSpace(category.Description))
+                            {
+                                <div style="font-size:11px;color:var(--text-muted)">@category.Description</div>
+                            }
+                        </td>
+                        <td class="mono">@category.Slug</td>
+                        <td><span class="badge badge-@category.ColorToken">@category.ColorToken</span></td>
+                        <td class="mono">@category.MediaCount</td>
+                        <td>
+                            <div class="flex gap-2">
+                                <a class="btn btn-ghost btn-sm" asp-controller="Admin" asp-action="CategoriesEdit"
+                                   asp-route-id="@category.Id">Edit</a>
+                                @if (category.MediaCount > 0)
+                                {
+                                    <button class="btn btn-danger btn-sm" disabled style="opacity:0.4" title="Media still uses this category">Delete</button>
+                                }
+                                else
+                                {
+                                    <form asp-controller="Admin" asp-action="CategoriesDelete" asp-route-id="@category.Id" method="post"
+                                          onsubmit="return confirm('Delete \'@category.Name\'?');">
+                                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="ds-h2" style="font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--text-primary);margin-bottom:var(--sp-4)">
+        @(Model.IsEdit ? "Edit Category" : "Create / Edit Form")
+    </div>
+    <div asp-validation-summary="ModelOnly" class="validation-summary-errors" style="max-width:620px"></div>
+    <section class="settings-section" style="max-width:620px">
+        <div class="settings-section-title">Category Details</div>
+        <form asp-controller="Admin" asp-action="@(Model.IsEdit ? "CategoriesEdit" : "CategoriesCreate")"
+              asp-route-id="@Model.Form.Id" method="post" novalidate>
+            <input type="hidden" asp-for="Form.Id" />
+            <div style="display:grid;grid-template-columns:90px 1fr;gap:var(--sp-4)">
+                <div class="form-group" style="margin:0">
+                    <label class="form-label" asp-for="Form.Icon"></label>
+                    <input class="form-input" asp-for="Form.Icon" style="text-align:center;font-size:20px" placeholder="🎬" />
+                </div>
+                <div class="form-group" style="margin:0">
+                    <label class="form-label" asp-for="Form.Name"></label>
+                    <input class="form-input" asp-for="Form.Name" />
+                    <span asp-validation-for="Form.Name"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label" asp-for="Form.Slug"></label>
+                <input class="form-input" asp-for="Form.Slug" />
+                <div class="form-hint">Used in <span class="mono">/Search?category=movies</span> - must be unique.</div>
+                <span asp-validation-for="Form.Slug"></span>
+            </div>
+            <div class="form-group">
+                <label class="form-label" asp-for="Form.Description"></label>
+                <textarea class="form-textarea" asp-for="Form.Description" style="min-height:70px"></textarea>
+                <span asp-validation-for="Form.Description"></span>
+            </div>
+            <div class="form-group">
+                <label class="form-label" asp-for="Form.ColorToken"></label>
+                <select class="form-select" asp-for="Form.ColorToken">
+                    <option value="primary">primary</option>
+                    <option value="success">success</option>
+                    <option value="accent">accent</option>
+                    <option value="warning">warning</option>
+                    <option value="info">info</option>
+                </select>
+                <div class="form-hint">Drives the category badge colour across media cards, search results, and entry lists.</div>
+                <span asp-validation-for="Form.ColorToken"></span>
+            </div>
+            <div class="flex gap-3">
+                <button type="submit" class="btn btn-primary">Save Category</button>
+                <a class="btn btn-secondary" asp-controller="Admin" asp-action="Categories">Cancel</a>
+            </div>
+        </form>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

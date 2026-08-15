@@ -14,6 +14,9 @@ public class UnitOfWork : IUnitOfWork
     private IEntryRepository? _entries;
     private IMediaRepository? _media;
     private IReportRepository? _reports;
+    private ICollectionRepository? _collections;
+    private IFavoriteRepository? _favorites;
+    private INotificationRepository? _notifications;
     private IDbContextTransaction? _transaction;
     private bool _disposed;
 
@@ -27,6 +30,13 @@ public class UnitOfWork : IUnitOfWork
     public IMediaRepository Media => _media ??= new MediaRepository(_context);
 
     public IReportRepository Reports => _reports ??= new ReportRepository(_context);
+
+    public ICollectionRepository Collections => _collections ??= new CollectionRepository(_context);
+
+    public IFavoriteRepository Favorites => _favorites ??= new FavoriteRepository(_context);
+
+    public INotificationRepository Notifications =>
+        _notifications ??= new NotificationRepository(_context);
 
     /// <summary>
     /// Cached per unit of work, so two calls for the same entity share one change tracker view.

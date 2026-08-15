@@ -8,7 +8,9 @@ using PersonaNest.Web.Extensions;
 namespace PersonaNest.Web.Controllers;
 
 /// <summary>
-/// Profile, appearance and privacy settings (§16). Signed-in users only.
+/// Privacy, notifications and account (§16). Signed-in users only. Profile and appearance moved
+/// to <see cref="ProfileController.Edit"/> - Edit and Settings are two separate destinations, not
+/// tabs on one page.
 /// <para>
 /// Thin by design (§10, §29): every action validates, delegates to a service, and redirects.
 /// </para>
@@ -36,67 +38,21 @@ public class SettingsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Profile(
-        UpdateProfileRequest form, CancellationToken cancellationToken)
-    {
-        if (!ModelState.IsValid)
-        {
-            return await RedisplayAsync(m => m.Profile = form, cancellationToken);
-        }
-
-        var result = await _profileService.UpdateProfileAsync(
-            User.GetUserId()!, form, cancellationToken);
-
-        if (!result.Succeeded)
-        {
-            ModelState.AddModelError(string.Empty, result.FirstError!);
-            return await RedisplayAsync(m => m.Profile = form, cancellationToken);
-        }
-
-        TempData["Success"] = "Your profile has been updated.";
-        return RedirectToAction(nameof(Index));
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Appearance(
-        UpdateAppearanceRequest form, CancellationToken cancellationToken)
-    {
-        if (!ModelState.IsValid)
-        {
-            return await RedisplayAsync(m => m.Appearance = form, cancellationToken);
-        }
-
-        var result = await _profileService.UpdateAppearanceAsync(
-            User.GetUserId()!, form, cancellationToken);
-
-        if (!result.Succeeded)
-        {
-            ModelState.AddModelError(string.Empty, result.FirstError!);
-            return await RedisplayAsync(m => m.Appearance = form, cancellationToken);
-        }
-
-        TempData["Success"] = "Your appearance settings have been saved.";
-        return RedirectToAction(nameof(Index));
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> PrivacySettings(
-        UpdatePrivacyRequest form, CancellationToken cancellationToken)
+        UpdatePrivacyRequest privacySettings, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
         {
-            return await RedisplayAsync(m => m.PrivacySettings = form, cancellationToken);
+            return await RedisplayAsync(m => m.PrivacySettings = privacySettings, cancellationToken);
         }
 
         var result = await _profileService.UpdatePrivacyAsync(
-            User.GetUserId()!, form, cancellationToken);
+            User.GetUserId()!, privacySettings, cancellationToken);
 
         if (!result.Succeeded)
         {
             ModelState.AddModelError(string.Empty, result.FirstError!);
-            return await RedisplayAsync(m => m.PrivacySettings = form, cancellationToken);
+            return await RedisplayAsync(m => m.PrivacySettings = privacySettings, cancellationToken);
         }
 
         TempData["Success"] = "Your privacy setting has been saved.";
@@ -134,18 +90,12 @@ public class SettingsController : Controller
 
         return new SettingsViewModel
         {
-            Profile = new UpdateProfileRequest
+            UserName = header.UserName,
+            MemberSince = header.CreatedAt,
+            PrivacySettings = new UpdatePrivacyRequest
             {
-                DisplayName = header.DisplayName,
-                Bio = header.Bio,
-                ProfilePictureUrl = header.ProfilePictureUrl,
-                BannerUrl = header.BannerUrl
+                DefaultEntryPrivacy = header.DefaultEntryPrivacy
             },
-            Appearance = new UpdateAppearanceRequest
-            {
-                AccentColor = header.AccentColor
-            },
-            Themes = await _profileService.GetThemesAsync(cancellationToken),
             LatestApplication = await _moderatorApplicationService
                 .GetLatestForUserAsync(userId, cancellationToken)
         };

@@ -20,7 +20,7 @@ public class PersonaNestDbContextFactory : IDesignTimeDbContextFactory<PersonaNe
 {
     private const string DefaultDesignTimeConnection =
         "Server=(localdb)\\MSSQLLocalDB;Database=PersonaNest;Trusted_Connection=True;" +
-        "MultipleActiveResultSets=true;TrustServerCertificate=True";
+        "TrustServerCertificate=True";
 
     public PersonaNestDbContext CreateDbContext(string[] args)
     {

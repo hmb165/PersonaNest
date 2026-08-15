@@ -73,4 +73,11 @@ public interface IEntryRepository : IRepository<Entry>
         int page = 1,
         int pageSize = 20,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The user's average rating across every rated entry, computed as a single SQL AVG() -
+    /// never capped, never materialised into memory (§13). Null when they have none.
+    /// </summary>
+    Task<decimal?> GetAverageRatingAsync(
+        string userId, CancellationToken cancellationToken = default);
 }

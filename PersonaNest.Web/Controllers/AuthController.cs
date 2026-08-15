@@ -1,8 +1,11 @@
+using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using PersonaNest.Domain.Constants;
 using PersonaNest.Domain.Entities;
+using PersonaNest.Services.DTOs.Requests;
 using PersonaNest.Services.Interfaces;
 using PersonaNest.Services.ViewModels;
 
@@ -24,17 +27,20 @@ public class AuthController : Controller
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IProfileService _profileService;
+    private readonly IEmailSender _emailSender;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         IProfileService profileService,
+        IEmailSender emailSender,
         ILogger<AuthController> logger)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _profileService = profileService;
+        _emailSender = emailSender;
         _logger = logger;
     }
 
@@ -180,6 +186,109 @@ public class AuthController : Controller
         _logger.LogInformation("User {UserName} signed out.", userName);
 
         return RedirectToAction(nameof(HomeController.Index), "Home");
+    }
+
+    [HttpGet]
+    public IActionResult ForgotPassword() => View(new ForgotPasswordViewModel());
+
+    /// <summary>
+    /// Always reports "email sent" whether or not the account exists, so the response can never
+    /// be used to enumerate registered addresses.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ForgotPassword(
+        ForgotPasswordViewModel model, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var user = await _userManager.FindByEmailAsync(model.Form.Email.Trim());
+        if (user is not null && !user.IsDeleted)
+        {
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+            var resetLink = Url.Action(
+                nameof(ResetPassword), "Auth",
+                new { email = user.Email, token = encodedToken },
+                Request.Scheme)!;
+
+            await _emailSender.SendPasswordResetEmailAsync(user.Email!, resetLink, cancellationToken);
+            _logger.LogInformation("Password reset requested for {UserName}.", user.UserName);
+        }
+        else
+        {
+            _logger.LogInformation(
+                "Password reset requested for an email with no matching account.");
+        }
+
+        model.EmailSent = true;
+        return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult ResetPassword(string? email, string? token)
+    {
+        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(token))
+        {
+            // No valid reset context to work with - send them back to request a fresh link
+            // rather than show a broken form.
+            return RedirectToAction(nameof(ForgotPassword));
+        }
+
+        return View(new ResetPasswordViewModel
+        {
+            Form = new ResetPasswordRequest { Email = email, Token = token }
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var user = await _userManager.FindByEmailAsync(model.Form.Email.Trim());
+        if (user is null || user.IsDeleted)
+        {
+            // Same vague-on-purpose messaging as Login - never confirm whether the address exists.
+            ModelState.AddModelError(string.Empty, "This reset link is invalid or has expired.");
+            return View(model);
+        }
+
+        string decodedToken;
+        try
+        {
+            decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(model.Form.Token));
+        }
+        catch (FormatException)
+        {
+            ModelState.AddModelError(string.Empty, "This reset link is invalid or has expired.");
+            return View(model);
+        }
+
+        var result = await _userManager.ResetPasswordAsync(
+            user, decodedToken, model.Form.NewPassword);
+
+        if (!result.Succeeded)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+
+            _logger.LogWarning("Password reset failed for {UserName}.", user.UserName);
+            return View(model);
+        }
+
+        _logger.LogInformation("Password reset completed for {UserName}.", user.UserName);
+        TempData["Success"] = "Your password has been reset. You can now log in.";
+        return RedirectToAction(nameof(Login));
     }
 
     [HttpGet]

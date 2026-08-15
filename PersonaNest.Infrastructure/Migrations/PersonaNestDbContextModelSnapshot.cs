@@ -962,6 +962,53 @@ namespace PersonaNest.Infrastructure.Migrations
                     b.ToTable("ModeratorApplications");
                 });
 
+            modelBuilder.Entity("PersonaNest.Domain.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActorUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RecipientUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Url")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("RecipientUserId", "CreatedAt");
+
+                    b.HasIndex("RecipientUserId", "IsRead");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("PersonaNest.Domain.Entities.Tag", b =>
                 {
                     b.Property<int>("Id")
@@ -1066,6 +1113,13 @@ namespace PersonaNest.Infrastructure.Migrations
                 {
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("AiNarrative")
+                        .HasMaxLength(600)
+                        .HasColumnType("nvarchar(600)");
+
+                    b.Property<DateTime?>("AiNarrativeGeneratedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<decimal?>("AverageRating")
                         .HasPrecision(3, 1)
@@ -1259,6 +1313,78 @@ namespace PersonaNest.Infrastructure.Migrations
                             Name = "Teal",
                             PrimaryDimHex = "#0f8f80",
                             PrimaryHex = "#14b8a6"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Description = "Rich and thoughtful.",
+                            IsDefault = false,
+                            Name = "Indigo",
+                            PrimaryDimHex = "#4547c4",
+                            PrimaryHex = "#6366f1"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Description = "Soft and expressive.",
+                            IsDefault = false,
+                            Name = "Rose",
+                            PrimaryDimHex = "#c2293f",
+                            PrimaryHex = "#f43f5e"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            Description = "Sharp and lively.",
+                            IsDefault = false,
+                            Name = "Lime",
+                            PrimaryDimHex = "#65990f",
+                            PrimaryHex = "#84cc16"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            Description = "Crisp and modern.",
+                            IsDefault = false,
+                            Name = "Cyan",
+                            PrimaryDimHex = "#0589a0",
+                            PrimaryHex = "#06b6d4"
+                        },
+                        new
+                        {
+                            Id = 13,
+                            Description = "Playful and vivid.",
+                            IsDefault = false,
+                            Name = "Fuchsia",
+                            PrimaryDimHex = "#ab2cc0",
+                            PrimaryHex = "#d946ef"
+                        },
+                        new
+                        {
+                            Id = 14,
+                            Description = "Muted and understated.",
+                            IsDefault = false,
+                            Name = "Slate",
+                            PrimaryDimHex = "#47536b",
+                            PrimaryHex = "#64748b"
+                        },
+                        new
+                        {
+                            Id = 15,
+                            Description = "Bright and cheerful.",
+                            IsDefault = false,
+                            Name = "Yellow",
+                            PrimaryDimHex = "#b58607",
+                            PrimaryHex = "#eab308"
+                        },
+                        new
+                        {
+                            Id = 16,
+                            Description = "Light and airy.",
+                            IsDefault = false,
+                            Name = "Sky",
+                            PrimaryDimHex = "#0b7fb5",
+                            PrimaryHex = "#0ea5e9"
                         });
                 });
 
@@ -1627,6 +1753,24 @@ namespace PersonaNest.Infrastructure.Migrations
                     b.Navigation("ReviewedByAdmin");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PersonaNest.Domain.Entities.Notification", b =>
+                {
+                    b.HasOne("PersonaNest.Domain.Entities.ApplicationUser", "Actor")
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PersonaNest.Domain.Entities.ApplicationUser", "Recipient")
+                        .WithMany()
+                        .HasForeignKey("RecipientUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Actor");
+
+                    b.Navigation("Recipient");
                 });
 
             modelBuilder.Entity("PersonaNest.Domain.Entities.TasteProfile", b =>

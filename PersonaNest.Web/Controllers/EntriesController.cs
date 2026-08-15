@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PersonaNest.Domain.Enums;
 using PersonaNest.Services.DTOs.Requests;
 using PersonaNest.Services.DTOs.Responses;
 using PersonaNest.Services.Interfaces;
@@ -21,15 +22,18 @@ public class EntriesController : Controller
     private readonly IMediaService _mediaService;
     private readonly ICollectionService _collectionService;
     private readonly ICommentService _commentService;
+    private readonly IReportService _reportService;
 
     public EntriesController(
         IEntryService entryService, IMediaService mediaService,
-        ICollectionService collectionService, ICommentService commentService)
+        ICollectionService collectionService, ICommentService commentService,
+        IReportService reportService)
     {
         _entryService = entryService;
         _mediaService = mediaService;
         _collectionService = collectionService;
         _commentService = commentService;
+        _reportService = reportService;
     }
 
     /// <summary>GET /Entries</summary>
@@ -85,7 +89,7 @@ public class EntriesController : Controller
         var model = new EntryFormViewModel
         {
             IsEdit = false,
-            Create = new CreateEntryRequest { MediaId = mediaId.Value },
+            Create = new CreateEntryRequest { MediaId = mediaId.Value, ConsumedAt = DateTime.UtcNow.Date },
             Media = media.AsCardDto(),
             AvailableTags = await _entryService.GetTagsAsync(cancellationToken)
         };
@@ -236,6 +240,24 @@ public class EntriesController : Controller
         {
             TempData["Error"] = result.FirstError;
         }
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    /// <summary>POST /Entries/Report/{id}</summary>
+    [HttpPost("Entries/Report/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Report(
+        int id, ReportReason reason, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId()!;
+
+        var result = await _reportService.SubmitAsync(
+            new CreateReportRequest { TargetType = ReportTargetType.Entry, TargetId = id, Reason = reason },
+            userId, cancellationToken);
+
+        TempData[result.Succeeded ? "Success" : "Error"] =
+            result.Succeeded ? "Thanks - a moderator will take a look." : result.FirstError;
 
         return RedirectToAction(nameof(Details), new { id });
     }

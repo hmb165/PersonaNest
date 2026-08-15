@@ -17,6 +17,7 @@ public static class TasteProfileMappings
         TotalReviews = tp.TotalReviews,
         MostActiveMonth = tp.MostActiveMonth,
         ComputedAt = tp.ComputedAt,
+        AiNarrative = tp.AiNarrative,
         Categories = tp.Categories
             .OrderByDescending(c => c.Percentage)
             .Select(c => new TasteCategorySliceDto

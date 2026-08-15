@@ -121,4 +121,16 @@ public class EntryRepository : Repository<Entry>, IEntryRepository
             .Select(selector)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<decimal?> GetAverageRatingAsync(
+        string userId, CancellationToken cancellationToken = default)
+    {
+        var rated = Set.AsNoTracking().Where(e => e.UserId == userId && e.Rating != null);
+
+        // AVG() over an empty set is SQL NULL either way, but this avoids the round trip and
+        // reads clearer than checking the nullable result.
+        return await rated.AnyAsync(cancellationToken)
+            ? await rated.AverageAsync(e => e.Rating!.Value, cancellationToken)
+            : null;
+    }
 }

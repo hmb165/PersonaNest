@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PersonaNest.Domain.Enums;
 using PersonaNest.Services.DTOs.Requests;
 using PersonaNest.Services.Interfaces;
 using PersonaNest.Web.Extensions;
@@ -11,10 +12,12 @@ namespace PersonaNest.Web.Controllers;
 public class CommentsController : Controller
 {
     private readonly ICommentService _commentService;
+    private readonly IReportService _reportService;
 
-    public CommentsController(ICommentService commentService)
+    public CommentsController(ICommentService commentService, IReportService reportService)
     {
         _commentService = commentService;
+        _reportService = reportService;
     }
 
     /// <summary>
@@ -73,6 +76,24 @@ public class CommentsController : Controller
         {
             TempData["Error"] = result.FirstError;
         }
+
+        return RedirectToAction("Details", "Entries", new { id = entryId });
+    }
+
+    /// <summary>POST /Comments/Report/{id}</summary>
+    [HttpPost("Comments/Report/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Report(
+        int id, int entryId, ReportReason reason, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId()!;
+
+        var result = await _reportService.SubmitAsync(
+            new CreateReportRequest { TargetType = ReportTargetType.Comment, TargetId = id, Reason = reason },
+            userId, cancellationToken);
+
+        TempData[result.Succeeded ? "Success" : "Error"] =
+            result.Succeeded ? "Thanks - a moderator will take a look." : result.FirstError;
 
         return RedirectToAction("Details", "Entries", new { id = entryId });
     }

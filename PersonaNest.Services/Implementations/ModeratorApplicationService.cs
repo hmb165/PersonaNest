@@ -123,6 +123,14 @@ public class ModeratorApplicationService : IModeratorApplicationService
             return ServiceResult.Failure("That application has already been reviewed.");
         }
 
+        // AdminNotes maps to a nvarchar(2000) column (ModeratorApplicationConfiguration); an
+        // over-length value would otherwise fail at SaveChanges with a raw DB error instead of a
+        // friendly ServiceResult (§12).
+        if (request.AdminNotes?.Length > 2000)
+        {
+            return ServiceResult.Failure("Notes cannot exceed 2000 characters.");
+        }
+
         application.Status = request.Approve
             ? ApplicationStatus.Approved
             : ApplicationStatus.Rejected;

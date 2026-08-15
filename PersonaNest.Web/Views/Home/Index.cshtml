@@ -7,6 +7,7 @@
 <section class="home-hero">
     <div class="home-hero-bg"></div>
     <div class="home-hero-glow"></div>
+    <div class="home-hero-glow-secondary"></div>
     <div class="home-hero-content">
         <div class="home-hero-eyebrow">Your Media Journal</div>
         <h1 class="home-hero-title">Your home for <em>everything</em> you love.</h1>
@@ -22,11 +23,30 @@
             }
             else
             {
-                <a class="btn btn-primary btn-lg" asp-controller="Auth" asp-action="Register">Start for free</a>
+                <a class="btn btn-primary btn-lg" asp-controller="Auth" asp-action="Register">Sign Up</a>
                 <a class="btn btn-secondary btn-lg" asp-controller="Auth" asp-action="Login">Log in</a>
             }
         </div>
     </div>
+
+    @{
+        var heroImages = Model.Trending
+            .Where(m => !string.IsNullOrEmpty(m.OfficialCoverUrl))
+            .Take(6)
+            .ToList();
+    }
+    @if (heroImages.Count > 1)
+    {
+        <div class="home-hero-visual" aria-hidden="true">
+            @for (var i = 0; i < heroImages.Count; i++)
+            {
+                <div class="home-hero-visual-slide @(i == 0 ? "active" : "")">
+                    <img src="@heroImages[i].OfficialCoverUrl" alt="" loading="@(i == 0 ? "eager" : "lazy")" />
+                </div>
+            }
+            <div class="home-hero-visual-gradient"></div>
+        </div>
+    }
 </section>
 
 @* Categories are seeded reference data, read through IMediaService - never hard-coded in the
@@ -85,3 +105,7 @@
         </div>
     }
 </section>
+
+@section Scripts {
+    <script src="~/js/hero-carousel.js" asp-append-version="true"></script>
+}

@@ -82,7 +82,6 @@ public static class MediaMappings
             Creator = string.IsNullOrWhiteSpace(request.Creator)
                 ? null : request.Creator.Trim(),
             ReleaseYear = request.ReleaseYear,
-            RuntimeMinutes = request.RuntimeMinutes,
             CategoryId = request.CategoryId,
             CreatedById = createdById,
             CreatedAt = utcNow
@@ -99,7 +98,6 @@ public static class MediaMappings
         media.Creator = string.IsNullOrWhiteSpace(request.Creator)
             ? null : request.Creator.Trim();
         media.ReleaseYear = request.ReleaseYear;
-        media.RuntimeMinutes = request.RuntimeMinutes;
         media.CategoryId = request.CategoryId;
         media.UpdatedAt = utcNow;
     }

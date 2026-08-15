@@ -112,6 +112,25 @@
                 <a class="btn btn-accent" asp-controller="Auth" asp-action="Login">&#9825; Favorite</a>
                 <a class="btn btn-secondary" asp-controller="Auth" asp-action="Login">+ Add to Collection</a>
             }
+
+            @if (User.IsSignedIn())
+            {
+                <details style="display:inline-block">
+                    <summary class="btn btn-ghost" style="cursor:pointer;list-style:none">&#9873; Report</summary>
+                    <form asp-controller="Media" asp-action="Report" asp-route-id="@media.Id" method="post"
+                          style="margin-top:var(--sp-2);display:flex;gap:6px;align-items:center">
+                        <select name="reason" class="form-select" style="padding:7px 30px 7px 10px;max-width:160px">
+                            <option value="Spam">Spam</option>
+                            <option value="Inappropriate">Inappropriate</option>
+                            <option value="Duplicate">Duplicate</option>
+                            <option value="IncorrectInfo">Incorrect info</option>
+                            <option value="Harassment">Harassment</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <button type="submit" class="btn btn-secondary">Submit report</button>
+                    </form>
+                </details>
+            }
         </div>
     </div>
 </div>

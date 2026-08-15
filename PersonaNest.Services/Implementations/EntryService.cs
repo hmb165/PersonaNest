@@ -1,5 +1,6 @@
 using PersonaNest.Domain.Abstractions;
 using PersonaNest.Domain.Entities;
+using PersonaNest.Domain.Enums;
 using PersonaNest.Services.Common;
 using PersonaNest.Services.DTOs.Requests;
 using PersonaNest.Services.DTOs.Responses;
@@ -12,10 +13,12 @@ namespace PersonaNest.Services.Implementations;
 public class EntryService : IEntryService
 {
     private readonly IUnitOfWork _uow;
+    private readonly INotificationService _notificationService;
 
-    public EntryService(IUnitOfWork uow)
+    public EntryService(IUnitOfWork uow, INotificationService notificationService)
     {
         _uow = uow ?? throw new ArgumentNullException(nameof(uow));
+        _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
     }
 
     public async Task<PagedResult<EntryCardDto>> GetForProfileAsync(
@@ -36,20 +39,24 @@ public class EntryService : IEntryService
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        // Single-sourced so the page and the total can never drift apart (Phase 13 optimisation
+        // candidate, README.md). Still two round trips - a windowed COUNT(*) OVER() would fold
+        // them into one, but IRepository<T> has no such overload and adding a one-off escape
+        // hatch for this single call isn't worth the repository-contract change (§13's rule
+        // against unnecessary complexity cuts both ways).
+        System.Linq.Expressions.Expression<Func<Entry, bool>> filter = e =>
+            e.UserId == userId
+            && (request.CategoryId == null || e.Media.CategoryId == request.CategoryId)
+            && (request.Status == null || e.Status == request.Status);
+
         // The owner sees everything of their own, so no visibility filter is needed here.
         var items = await _uow.Entries.ListAsync(
-            e => e.UserId == userId
-                 && (request.CategoryId == null || e.Media.CategoryId == request.CategoryId)
-                 && (request.Status == null || e.Status == request.Status),
+            filter,
             EntryMappings.ToSummaryDto,
             q => q.OrderByDescending(e => e.CreatedAt),
             request.Page, request.PageSize, cancellationToken);
 
-        var total = await _uow.Entries.CountAsync(
-            e => e.UserId == userId
-                 && (request.CategoryId == null || e.Media.CategoryId == request.CategoryId)
-                 && (request.Status == null || e.Status == request.Status),
-            cancellationToken);
+        var total = await _uow.Entries.CountAsync(filter, cancellationToken);
 
         return new PagedResult<EntrySummaryDto>(items, total, request.Page, request.PageSize);
     }
@@ -106,6 +113,18 @@ public class EntryService : IEntryService
                 "Rating must be between 0.5 and 10.0, in steps of 0.5.");
         }
 
+        // Data annotations don't reject an out-of-range enum bound from a raw int (e.g.
+        // Status=99), so a defined-member check is needed here too (§12).
+        if (!Enum.IsDefined(typeof(EntryStatus), request.Status))
+        {
+            return ServiceResult<int>.Failure("That status value is not valid.");
+        }
+
+        if (!Enum.IsDefined(typeof(Privacy), request.Privacy))
+        {
+            return ServiceResult<int>.Failure("That privacy value is not valid.");
+        }
+
         var entry = request.ToEntity(userId, DateTime.UtcNow);
 
         // Two saves - the entry must exist before the aggregate recount can see it - so they are
@@ -149,6 +168,16 @@ public class EntryService : IEntryService
         if (!IsValidRating(request.Rating))
         {
             return ServiceResult.Failure("Rating must be between 0.5 and 10.0, in steps of 0.5.");
+        }
+
+        if (!Enum.IsDefined(typeof(EntryStatus), request.Status))
+        {
+            return ServiceResult.Failure("That status value is not valid.");
+        }
+
+        if (!Enum.IsDefined(typeof(Privacy), request.Privacy))
+        {
+            return ServiceResult.Failure("That privacy value is not valid.");
         }
 
         request.ApplyTo(entry, DateTime.UtcNow);
@@ -249,8 +278,15 @@ public class EntryService : IEntryService
         }, cancellationToken);
 
         await _uow.SaveChangesAsync(cancellationToken);
+
+        await _notificationService.NotifyEntryLikedAsync(userId, entryId, cancellationToken);
+
         return ServiceResult<bool>.Success(true);
     }
+
+    public Task<int> CountCreatedSinceAsync(
+        string userId, DateTime since, CancellationToken cancellationToken = default)
+        => _uow.Entries.CountAsync(e => e.UserId == userId && e.CreatedAt >= since, cancellationToken);
 
     /// <summary>
     /// Replaces an entry's tags with the requested set. Clear-and-re-add is correct here:
@@ -264,7 +300,7 @@ public class EntryService : IEntryService
         var existing = await repository.ListAsync(
             et => et.EntryId == entryId,
             et => new { et.EntryId, et.TagId },
-            orderBy: null, page: 1, pageSize: 100, cancellationToken);
+            q => q.OrderBy(et => et.TagId), page: 1, pageSize: 100, cancellationToken);
 
         var wanted = tagIds.Distinct().ToHashSet();
         var current = existing.Select(e => e.TagId).ToHashSet();

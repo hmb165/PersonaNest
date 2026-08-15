@@ -29,16 +29,28 @@ public sealed class DashboardViewModel
     public int EntriesThisWeek { get; set; }
 }
 
-/// <summary>/Settings — profile, appearance and privacy panels on one page.</summary>
-public sealed class SettingsViewModel
+/// <summary>/Profile/Edit — profile and appearance panels, separate from /Settings.</summary>
+public sealed class EditProfileViewModel
 {
     public UpdateProfileRequest Profile { get; set; } = new();
     public UpdateAppearanceRequest Appearance { get; set; } = new();
-    public UpdatePrivacyRequest PrivacySettings { get; set; } = new();
     public IReadOnlyList<ThemeDto> Themes { get; set; } = Array.Empty<ThemeDto>();
+
+    /// <summary>The signed-in user's own username, for the "back to profile" link.</summary>
+    public string UserName { get; set; } = string.Empty;
+}
+
+/// <summary>/Settings — privacy, notifications and account panels on one page.</summary>
+public sealed class SettingsViewModel
+{
+    public UpdatePrivacyRequest PrivacySettings { get; set; } = new();
 
     /// <summary>Drives the "Apply to become a Moderator" panel state.</summary>
     public ModeratorApplicationDto? LatestApplication { get; set; }
+
+    /// <summary>Account panel + "back to profile" link.</summary>
+    public string UserName { get; set; } = string.Empty;
+    public DateTime MemberSince { get; set; }
 }
 
 /// <summary>/Social/Followers and /Social/Following — one two-tab view.</summary>

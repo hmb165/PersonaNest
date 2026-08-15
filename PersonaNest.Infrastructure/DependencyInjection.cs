@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -74,6 +75,35 @@ public static class DependencyInjection
             options.AccessDeniedPath = "/Auth/AccessDenied";
             options.ExpireTimeSpan = TimeSpan.FromDays(14);
             options.SlidingExpiration = true;
+
+            // The cookie handler's default behaviour is a 302 redirect to the login page -
+            // correct for a browser navigating the MVC site, wrong for the REST API (§25): a
+            // curl/Swagger caller hitting an unauthenticated 302 would just receive an HTML login
+            // page with a 200-range status, not a usable "you are not authorized" signal. Requests
+            // under /api get a plain 401/403 instead; everything else keeps the redirect.
+            var defaultRedirectToLogin = options.Events.OnRedirectToLogin;
+            options.Events.OnRedirectToLogin = context =>
+            {
+                if (context.Request.Path.StartsWithSegments("/api"))
+                {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    return Task.CompletedTask;
+                }
+
+                return defaultRedirectToLogin(context);
+            };
+
+            var defaultRedirectToAccessDenied = options.Events.OnRedirectToAccessDenied;
+            options.Events.OnRedirectToAccessDenied = context =>
+            {
+                if (context.Request.Path.StartsWithSegments("/api"))
+                {
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    return Task.CompletedTask;
+                }
+
+                return defaultRedirectToAccessDenied(context);
+            };
         });
 
         // ── Phase 3: repositories and Unit of Work (§8, §9) ──────────────────────────────
@@ -86,6 +116,9 @@ public static class DependencyInjection
         services.AddScoped<IEntryRepository, EntryRepository>();
         services.AddScoped<IMediaRepository, MediaRepository>();
         services.AddScoped<IReportRepository, ReportRepository>();
+        services.AddScoped<ICollectionRepository, CollectionRepository>();
+        services.AddScoped<IFavoriteRepository, FavoriteRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWorkImplementation>();
 
         return services;

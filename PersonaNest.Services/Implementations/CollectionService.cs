@@ -25,15 +25,16 @@ public class CollectionService : ICollectionService
     {
         var isOwner = viewerId != null && viewerId == ownerId;
 
-        var repository = _uow.Repository<Collection>();
-
-        var items = await repository.ListAsync(
+        // ICollectionRepository, not the generic repository: CollectionItem->Media is a required
+        // navigation into a soft-delete-filtered entity, so a plain filtered query would silently
+        // drop a collection's item (and undercount it) the moment that media is removed (§13).
+        var items = await _uow.Collections.ListIncludingRemovedMediaAsync(
             c => c.UserId == ownerId && (isOwner || c.Privacy == Privacy.Public),
             CollectionMappings.ToCardDto,
             q => q.OrderByDescending(c => c.UpdatedAt ?? c.CreatedAt),
             page, pageSize, cancellationToken);
 
-        var total = await repository.CountAsync(
+        var total = await _uow.Collections.CountAsync(
             c => c.UserId == ownerId && (isOwner || c.Privacy == Privacy.Public),
             cancellationToken);
 
@@ -43,7 +44,7 @@ public class CollectionService : ICollectionService
     public async Task<CollectionDetailDto?> GetDetailsAsync(
         int collectionId, string? viewerId, CancellationToken cancellationToken = default)
     {
-        var collection = await _uow.Repository<Collection>().FirstOrDefaultAsync(
+        var collection = await _uow.Collections.GetDetailsIncludingRemovedMediaAsync(
             c => c.Id == collectionId,
             CollectionMappings.ToDetailDto(viewerId),
             cancellationToken);
@@ -72,6 +73,12 @@ public class CollectionService : ICollectionService
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        // Data annotations don't reject an out-of-range enum bound from a raw int (§12).
+        if (!Enum.IsDefined(typeof(Privacy), request.Privacy))
+        {
+            return ServiceResult<int>.Failure("That privacy value is not valid.");
+        }
+
         var collection = request.ToEntity(userId, DateTime.UtcNow);
 
         await _uow.Repository<Collection>().AddAsync(collection, cancellationToken);
@@ -96,6 +103,11 @@ public class CollectionService : ICollectionService
         if (collection.UserId != userId)
         {
             return ServiceResult.Failure("You can only edit your own collections.");
+        }
+
+        if (!Enum.IsDefined(typeof(Privacy), request.Privacy))
+        {
+            return ServiceResult.Failure("That privacy value is not valid.");
         }
 
         request.ApplyTo(collection, DateTime.UtcNow);

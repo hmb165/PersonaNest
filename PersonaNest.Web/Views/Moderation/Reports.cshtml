@@ -1,0 +1,128 @@
+@model ReportQueueViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Moderation Queue";
+    ViewData["Nav"] = "Moderation";
+}
+
+<div style="padding:var(--sp-6) var(--sp-8)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-5);flex-wrap:wrap;gap:var(--sp-3)">
+        <div style="font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--text-primary)">
+            Moderation Queue <span style="font-size:16px;color:var(--text-muted);font-family:var(--font-mono)">(@Model.TotalCount)</span>
+        </div>
+
+        <form asp-controller="Moderation" asp-action="Reports" method="get" class="flex gap-3">
+            <select name="status" class="form-select" style="width:150px;padding:7px 32px 7px 12px" onchange="this.form.submit()">
+                @foreach (ReportStatus status in Enum.GetValues<ReportStatus>())
+                {
+                    <option value="@status" selected="@(Model.Status == status)">@status</option>
+                }
+            </select>
+            <select name="targetType" class="form-select" style="width:150px;padding:7px 32px 7px 12px" onchange="this.form.submit()">
+                <option value="">All Types</option>
+                @foreach (ReportTargetType type in Enum.GetValues<ReportTargetType>())
+                {
+                    <option value="@type" selected="@(Model.TargetType == type)">@type</option>
+                }
+            </select>
+        </form>
+    </div>
+
+    @if (Model.Items.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="empty-state-title">Nothing here</div>
+            <p>No reports match this filter.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr><th>Content</th><th>Type</th><th>Reported By</th><th>Reason</th><th>Date</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var report in Model.Items)
+                    {
+                        <tr>
+                            <td>
+                                @if (report.TargetType == ReportTargetType.Media)
+                                {
+                                    <a asp-controller="Media" asp-action="Details" asp-route-id="@report.TargetId" style="color:var(--primary)">
+                                        <strong>@report.TargetLabel</strong>
+                                    </a>
+                                }
+                                else if (report.TargetType == ReportTargetType.Entry)
+                                {
+                                    <a asp-controller="Entries" asp-action="Details" asp-route-id="@report.TargetId" style="color:var(--primary)">
+                                        <strong>@report.TargetLabel</strong>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <strong>@report.TargetLabel</strong>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(report.TargetSnippet))
+                                {
+                                    <div style="font-size:11px;color:var(--text-muted)">@report.TargetSnippet</div>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge @(report.TargetType == ReportTargetType.Media ? "badge-warning" : report.TargetType == ReportTargetType.Entry ? "badge-danger" : "badge-muted")">
+                                    @report.TargetType
+                                </span>
+                            </td>
+                            <td><span class="mono">&#64;@report.ReporterUserName</span></td>
+                            <td style="font-size:12px">@report.Reason</td>
+                            <td><span class="mono" style="font-size:12px">@report.CreatedAt.ToString("MMM d")</span></td>
+                            <td>
+                                @if (report.Status == ReportStatus.Open)
+                                {
+                                    <div class="flex gap-2">
+                                        <form asp-controller="Moderation" asp-action="ResolveReport"
+                                              asp-route-targetType="@report.TargetType" asp-route-id="@report.Id" method="post">
+                                            <button type="submit" class="btn btn-success btn-sm"
+                                                    style="background:rgba(74,222,128,0.15);color:var(--success);border:1px solid rgba(74,222,128,0.3)">
+                                                &#10003; Resolve
+                                            </button>
+                                        </form>
+                                        <form asp-controller="Moderation" asp-action="DismissReport"
+                                              asp-route-targetType="@report.TargetType" asp-route-id="@report.Id" method="post">
+                                            <button type="submit" class="btn btn-ghost btn-sm">Dismiss</button>
+                                        </form>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-muted">@report.Status</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <div class="flex gap-2" style="justify-content:center;margin-top:var(--sp-6)">
+                @if (Model.Page > 1)
+                {
+                    <a class="btn btn-secondary btn-sm" asp-controller="Moderation" asp-action="Reports"
+                       asp-route-status="@Model.Status" asp-route-targetType="@Model.TargetType"
+                       asp-route-page="@(Model.Page - 1)">&larr; Previous</a>
+                }
+                <span class="mono" style="align-self:center;color:var(--text-muted);font-size:13px">
+                    Page @Model.Page of @Model.TotalPages
+                </span>
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a class="btn btn-secondary btn-sm" asp-controller="Moderation" asp-action="Reports"
+                       asp-route-status="@Model.Status" asp-route-targetType="@Model.TargetType"
+                       asp-route-page="@(Model.Page + 1)">Next &rarr;</a>
+                }
+            </div>
+        }
+    }
+</div>

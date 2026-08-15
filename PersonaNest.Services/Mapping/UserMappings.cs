@@ -29,10 +29,15 @@ public static class UserMappings
                 ? u.Theme.PrimaryDimHex
                 : DesignDefaults.AccentColorDark,
             CreatedAt = u.CreatedAt,
+            DefaultEntryPrivacy = u.DefaultEntryPrivacy,
             IsViewerSelf = viewerId != null && u.Id == viewerId,
             IsFollowedByViewer =
                 viewerId != null && u.Followers.Any(f => f.FollowerId == viewerId)
         };
+
+    /// <summary>Raw appearance state (edit form) - see <see cref="AppearanceDto"/>.</summary>
+    public static Expression<Func<ApplicationUser, AppearanceDto>> ToAppearanceDto =>
+        u => new AppearanceDto { ThemeId = u.ThemeId, AccentColor = u.AccentColor };
 
     /// <summary>User row for search results and follower lists.</summary>
     public static Expression<Func<ApplicationUser, UserCardDto>> ToCardDto(string? viewerId) =>
