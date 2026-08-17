@@ -52,7 +52,7 @@ public static class DependencyInjection
         services.AddHttpClient<ITmdbService, TmdbService>();          // Movies / TV Shows
         services.AddHttpClient<IRawgService, RawgService>();          // Games
         services.AddHttpClient<IGoogleBooksService, GoogleBooksService>(); // Books
-        services.AddHttpClient<IJikanService, JikanService>();        // Anime / Manga
+        services.AddHttpClient<IKitsuService, KitsuService>();        // Anime / Manga
         services.AddHttpClient<IMusicBrainzService, MusicBrainzService>(); // Music
         services.AddHttpClient<IAiNarrativeGenerator, AnthropicNarrativeGenerator>();
 

@@ -13,11 +13,21 @@ namespace PersonaNest.Web.Controllers;
 [AllowAnonymous]
 public class SearchController : Controller
 {
-    private readonly IMediaService _mediaService;
+    // Seeded Category ids (CategoryConfiguration.cs) - matches MediaController.SearchExternal's
+    // per-category provider dispatch.
+    private const int CategoryAnime = 4;
+    private const int CategoryBooks = 6;
 
-    public SearchController(IMediaService mediaService)
+    private readonly IMediaService _mediaService;
+    private readonly IGoogleBooksService _googleBooksService;
+    private readonly IKitsuService _kitsuService;
+
+    public SearchController(
+        IMediaService mediaService, IGoogleBooksService googleBooksService, IKitsuService kitsuService)
     {
         _mediaService = mediaService;
+        _googleBooksService = googleBooksService;
+        _kitsuService = kitsuService;
     }
 
     /// <summary>GET /Search</summary>
@@ -36,6 +46,23 @@ public class SearchController : Controller
             Page = results.Page,
             PageSize = results.PageSize
         };
+
+        // Live Google Books results alongside PersonaNest's own catalogue, so a book search isn't
+        // limited to whatever's already been logged locally. Scoped to the Books filter - the
+        // same "category picks the provider" rule Media/SearchExternal already uses - rather than
+        // guessing from free-text query on every search.
+        if (request.CategoryId == CategoryBooks && !string.IsNullOrWhiteSpace(request.Query))
+        {
+            model.ExternalBookResults = await _googleBooksService.SearchAsync(
+                request.Query, cancellationToken);
+        }
+
+        // Same idea for Anime, via Kitsu - no key needed.
+        if (request.CategoryId == CategoryAnime && !string.IsNullOrWhiteSpace(request.Query))
+        {
+            model.ExternalAnimeResults = await _kitsuService.SearchAsync(
+                request.Query, "anime", cancellationToken);
+        }
 
         return View(model);
     }

@@ -58,13 +58,14 @@
             <section class="settings-section" id="appearance">
                 <h2 class="settings-section-title">Appearance</h2>
                 <p style="font-size:13px;color:var(--text-muted);margin-bottom:var(--sp-4)">
-                    PersonaNest uses one cinematic dark palette. A theme picks the accent pair
-                    applied across your profile; a custom colour overrides it.
+                    These two settings are independent - your theme only changes your profile's
+                    background, and your accent colour only changes a few highlighted numbers and
+                    tabs on it. Neither one overrides the other.
                 </p>
 
                 <form asp-controller="Profile" asp-action="EditAppearance" method="post" novalidate>
                     <div class="form-group">
-                        <label class="form-label">Theme</label>
+                        <label class="form-label">Theme (profile background)</label>
                         <div class="swatch-row">
                             @foreach (var theme in Model.Themes)
                             {
@@ -79,24 +80,15 @@
                     </div>
 
                     <div class="form-group">
-                        @{ var hasCustomColor = !string.IsNullOrWhiteSpace(Model.Appearance.AccentColor); }
-                        <label class="form-label" style="display:flex;align-items:center;gap:8px;font-weight:400">
-                            <input type="checkbox" id="useCustomColor" checked="@(hasCustomColor ? "checked" : null)" />
-                            Use a custom accent colour instead of my theme
-                        </label>
-
-                        <div class="flex gap-2" style="align-items:center;margin-top:var(--sp-2)">
+                        <label class="form-label" asp-for="Appearance.AccentColor">Accent colour (profile text only)</label>
+                        <div class="flex gap-2" style="align-items:center">
                             <input type="color" class="color-picker-input" asp-for="Appearance.AccentColor"
-                                   value="@(hasCustomColor ? Model.Appearance.AccentColor : "#7c5cfc")"
-                                   disabled="@(hasCustomColor ? null : "disabled")" />
+                                   value="@(string.IsNullOrWhiteSpace(Model.Appearance.AccentColor) ? "#7c5cfc" : Model.Appearance.AccentColor)" />
                             <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted)">
-                                @(hasCustomColor ? Model.Appearance.AccentColor : "Using theme accent")
+                                @(string.IsNullOrWhiteSpace(Model.Appearance.AccentColor) ? "#7c5cfc" : Model.Appearance.AccentColor)
                             </span>
                         </div>
-                        <div class="form-hint">
-                            Unchecked, your theme's accent applies. Checked, this colour overrides it -
-                            uncheck and save to go back to your theme.
-                        </div>
+                        <div class="form-hint">Colours a handful of numbers and the active tab on your profile - nothing else.</div>
                         <span asp-validation-for="Appearance.AccentColor"></span>
                     </div>
 
@@ -109,15 +101,4 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        (function () {
-            var toggle = document.getElementById('useCustomColor');
-            var colorInput = document.getElementById('Appearance_AccentColor');
-            if (toggle && colorInput) {
-                toggle.addEventListener('change', function () {
-                    colorInput.disabled = !toggle.checked;
-                });
-            }
-        })();
-    </script>
 }

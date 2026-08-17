@@ -9,6 +9,9 @@
 # Serilog rolling log files (§24)
 PersonaNest.Web/Logs/
 
+# Auto-generated dev seed credentials (DbSeeder) - never committed
+dev-credentials.local.txt
+
 # Local Claude Code tooling config
 .claude/
 

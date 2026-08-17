@@ -787,19 +787,30 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
    PAGE: PROFILE
    ══════════════════════════════════════════════════════════════════ */
 .profile-container {
-  /* Soft wash of the viewer's chosen accent, fading into the normal dark ground - this is what
-     makes "changing your color" visibly change the profile page background, not just its accents. */
-  background: radial-gradient(ellipse 900px 480px at 50% 0%,
-    color-mix(in srgb, var(--primary) 16%, transparent) 0%,
-    transparent 70%);
+  /* Theme-tinted canvas for the whole page below the banner. A fading top-only wash used to sit
+     here, but the banner is opaque (hides it entirely) and .profile-stats/.card/.empty-state are
+     each opaque too, so the tint never actually reached the stats bar, tabs, entry list or sidebar
+     cards - the exact panels this is meant to colour. A flat, full-height tint plus explicit
+     overrides on those specific opaque children (below) is what actually shows up on screen. */
+  background: color-mix(in srgb, var(--profile-bg) 7%, var(--bg-base));
+}
+/* These three each paint their own opaque background over whatever sits behind them, so the
+   container's tint above would otherwise be invisible right where it needs to show: the stats
+   bar, every card (sidebar Taste Profile/Stats, and any dashed empty-state box) on this page. */
+.profile-container .profile-stats {
+  background: color-mix(in srgb, var(--profile-bg) 10%, var(--bg-raised));
+}
+.profile-container .card {
+  background: color-mix(in srgb, var(--profile-bg) 9%, var(--bg-card));
+}
+.profile-container .empty-state {
+  background: color-mix(in srgb, var(--profile-bg) 9%, var(--bg-card));
 }
 .profile-banner {
   height: 220px;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg,
-    color-mix(in srgb, var(--primary) 55%, #0d0d20) 0%,
-    #0d0d20 100%);
+  background: linear-gradient(135deg, #1a1040 0%, #0d0d20 100%);
 }
 .profile-banner img { width: 100%; height: 100%; object-fit: cover; }
 .profile-banner-overlay {
@@ -844,7 +855,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   background: var(--bg-raised);
 }
 .profile-stat { text-align: center; }
-.profile-stat-val { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--primary); }
+.profile-stat-val { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--profile-text-accent); }
 .profile-stat-label { font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
 .profile-tabs {
   display: flex; gap: 0;
@@ -863,7 +874,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   cursor: pointer;
 }
 .profile-tab:hover { color: var(--text-primary); }
-.profile-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.profile-tab.active { color: var(--profile-text-accent); border-bottom-color: var(--profile-text-accent); }
 .profile-body { padding: var(--sp-6) var(--sp-8); }
 .profile-grid { display: grid; grid-template-columns: 1fr 280px; gap: var(--sp-6); }
 .profile-favorites {

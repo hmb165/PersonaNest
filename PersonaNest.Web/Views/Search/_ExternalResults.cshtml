@@ -1,0 +1,35 @@
+@model ExternalResultsSectionViewModel
+
+@if (Model.Results.Count > 0)
+{
+    <div style="margin-top:var(--sp-8)">
+        <div class="home-section-header" style="margin-bottom:var(--sp-4)">
+            <h2 class="home-section-title" style="font-size:20px">More from @Model.SourceLabel</h2>
+        </div>
+        <div class="search-results-grid">
+            @foreach (var hit in Model.Results)
+            {
+                <div class="card media-card">
+                    <div class="media-card-cover">
+                        @if (!string.IsNullOrEmpty(hit.ImageUrl))
+                        {
+                            <img src="@hit.ImageUrl" alt="@hit.Title" />
+                        }
+                        <div class="media-card-category">@Model.SourceLabel</div>
+                    </div>
+                    <div class="media-card-body">
+                        <div class="media-card-title">@hit.Title</div>
+                        <div class="media-card-meta">@hit.ReleaseYear</div>
+                        <a class="btn btn-secondary btn-sm" style="margin-top:var(--sp-2);width:100%;text-align:center"
+                           asp-controller="Media" asp-action="Add"
+                           asp-route-Title="@hit.Title" asp-route-CategoryId="@Model.CategoryId"
+                           asp-route-ReleaseYear="@hit.ReleaseYear" asp-route-Description="@hit.Overview"
+                           asp-route-OfficialCoverUrl="@hit.ImageUrl">
+                            Add to PersonaNest &rarr;
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}

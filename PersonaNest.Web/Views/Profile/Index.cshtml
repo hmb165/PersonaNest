@@ -5,13 +5,13 @@
 }
 
 @*
-    The per-user accent is applied as inline CSS custom properties on the profile container,
-    exactly as Design System v2's Implementation Notes specify. CSS custom properties cascade,
-    so every child using var(--primary) picks up this user's colour - and only inside their
-    profile.
+    Two independent per-user custom properties, cascading only inside this profile: --profile-bg
+    (from the selected Theme) tints the page background alone, and --profile-text-accent (from the
+    custom accent colour) tints a handful of text highlights alone. Neither touches the other, and
+    neither touches the banner or buttons - those stay on the site-wide default --primary.
 *@
 <div class="profile-container page-shell"
-     style="--primary: @Model.Header.AccentColor; --primary-dim: @Model.Header.AccentColorDark;">
+     style="--profile-bg: @Model.Header.BackgroundColor; --profile-text-accent: @Model.Header.AccentColor;">
 
     <div class="profile-banner">
         @if (!string.IsNullOrEmpty(Model.Header.BannerUrl))
@@ -136,7 +136,7 @@
                     <div class="dashboard-section-title">Stats</div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)">
                         <div>
-                            <div class="stat-card-value" style="color:var(--primary)">@Model.Stats.EntryCount</div>
+                            <div class="stat-card-value" style="color:var(--profile-text-accent)">@Model.Stats.EntryCount</div>
                             <div class="stat-card-label">Total Entries</div>
                         </div>
                         <div>

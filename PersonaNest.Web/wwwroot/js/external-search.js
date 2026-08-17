@@ -1,7 +1,7 @@
 // PersonaNest — Add Media / external-API auto-fill (bonus: Consume an External API). Progressive
 // enhancement only: the panel starts hidden and the manual fields below always work without it
 // (§12) - this just saves typing by filling them from a search result at the matching category's
-// external source (TMDB, RAWG, Jikan, Google Books, MusicBrainz).
+// external source (TMDB, RAWG, Kitsu, Google Books, MusicBrainz).
 (function () {
     'use strict';
 
@@ -13,8 +13,8 @@
 
     // Seeded Category ids (CategoryConfiguration.cs) -> the provider searched for that category.
     var SOURCE_LABEL_BY_CATEGORY = {
-        '1': 'RAWG', '2': 'TMDB', '3': 'TMDB', '4': 'Jikan (MyAnimeList)',
-        '5': 'Jikan (MyAnimeList)', '6': 'Google Books', '7': 'MusicBrainz'
+        '1': 'RAWG', '2': 'TMDB', '3': 'TMDB', '4': 'Kitsu',
+        '5': 'Kitsu', '6': 'Google Books', '7': 'MusicBrainz'
     };
 
     var queryInput = document.getElementById('externalQuery');

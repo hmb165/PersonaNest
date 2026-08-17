@@ -131,6 +131,12 @@
                     </form>
                 </details>
             }
+            @if (User.IsInRole(Roles.Moderator) || User.IsInRole(Roles.Admin))
+            {
+                <a class="btn btn-ghost" asp-controller="Media" asp-action="Edit" asp-route-id="@media.Id">
+                    &#9998; Edit
+                </a>
+            }
         </div>
     </div>
 </div>

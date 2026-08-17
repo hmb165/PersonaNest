@@ -13,11 +13,18 @@ public sealed record ProfileHeaderDto
     public string? BannerUrl { get; init; }
 
     /// <summary>
-    /// Resolved accent: the user's custom hex when set, otherwise their theme's, otherwise the
-    /// default theme's. Rendered as an inline <c>--primary</c> on the profile container.
+    /// The profile's background wash colour, from the user's selected Theme (falling back to the
+    /// default theme if none is set). Independent of <see cref="AccentColor"/> - picking a theme
+    /// never touches text colour, and picking a custom accent never touches the background.
+    /// </summary>
+    public string BackgroundColor { get; init; } = string.Empty;
+
+    /// <summary>
+    /// The user's custom text-accent hex (falling back to the design default), used only to colour
+    /// a handful of highlighted numbers/tabs on their own profile - never the background, never a
+    /// button. See <see cref="BackgroundColor"/> for what actually controls the background.
     /// </summary>
     public string AccentColor { get; init; } = string.Empty;
-    public string AccentColorDark { get; init; } = string.Empty;
 
     public DateTime CreatedAt { get; init; }
 
@@ -29,9 +36,8 @@ public sealed record ProfileHeaderDto
 }
 
 /// <summary>
-/// Raw appearance state for the edit form - unlike <see cref="ProfileHeaderDto.AccentColor"/>,
-/// <see cref="AccentColor"/> here is null when the user has no custom override, so the edit page
-/// can tell "no custom colour set" apart from "custom colour happens to match the theme".
+/// Raw appearance state for the edit form: which Theme is selected (controls the profile
+/// background) and the raw stored custom accent hex, if any (controls a few text highlights).
 /// </summary>
 public sealed record AppearanceDto
 {

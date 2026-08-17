@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PersonaNest.Domain.Constants;
 using PersonaNest.Domain.Enums;
 using PersonaNest.Services.DTOs.Requests;
 using PersonaNest.Services.DTOs.Responses;
@@ -21,6 +22,8 @@ namespace PersonaNest.Web.Controllers;
 /// </summary>
 public class MediaController : Controller
 {
+    private const string ModeratorOrAdmin = $"{Roles.Moderator},{Roles.Admin}";
+
     private readonly IMediaService _mediaService;
     private readonly IEntryService _entryService;
     private readonly ICollectionService _collectionService;
@@ -28,14 +31,14 @@ public class MediaController : Controller
     private readonly ITmdbService _tmdbService;
     private readonly IRawgService _rawgService;
     private readonly IGoogleBooksService _googleBooksService;
-    private readonly IJikanService _jikanService;
+    private readonly IKitsuService _kitsuService;
     private readonly IMusicBrainzService _musicBrainzService;
 
     public MediaController(
         IMediaService mediaService, IEntryService entryService,
         ICollectionService collectionService, IReportService reportService,
         ITmdbService tmdbService, IRawgService rawgService,
-        IGoogleBooksService googleBooksService, IJikanService jikanService,
+        IGoogleBooksService googleBooksService, IKitsuService kitsuService,
         IMusicBrainzService musicBrainzService)
     {
         _mediaService = mediaService;
@@ -45,7 +48,7 @@ public class MediaController : Controller
         _tmdbService = tmdbService;
         _rawgService = rawgService;
         _googleBooksService = googleBooksService;
-        _jikanService = jikanService;
+        _kitsuService = kitsuService;
         _musicBrainzService = musicBrainzService;
     }
 
@@ -84,13 +87,28 @@ public class MediaController : Controller
         return View(model);
     }
 
-    /// <summary>GET /Media/Add</summary>
+    /// <summary>
+    /// GET /Media/Add - optionally pre-filled from an external search result the user picked
+    /// elsewhere (e.g. a Google Books hit on /Search). Individual query parameters rather than a
+    /// bound <see cref="CreateMediaRequest"/>, since that type is already the POST overload's
+    /// parameter and C# can't distinguish two actions with identical parameter types.
+    /// </summary>
     [HttpGet]
     [Authorize]
-    public async Task<IActionResult> Add(CancellationToken cancellationToken)
+    public async Task<IActionResult> Add(
+        string? title, int? categoryId, int? releaseYear, string? description,
+        string? officialCoverUrl, CancellationToken cancellationToken)
     {
         var model = new AddMediaViewModel
         {
+            Form = new CreateMediaRequest
+            {
+                Title = title ?? string.Empty,
+                CategoryId = categoryId ?? 0,
+                ReleaseYear = releaseYear,
+                Description = description,
+                OfficialCoverUrl = officialCoverUrl
+            },
             Categories = await _mediaService.GetCategoriesAsync(cancellationToken)
         };
 
@@ -122,14 +140,80 @@ public class MediaController : Controller
             1 => await _rawgService.SearchAsync(trimmed, cancellationToken),
             2 => await _tmdbService.SearchAsync(trimmed, "movie", cancellationToken),
             3 => await _tmdbService.SearchAsync(trimmed, "tv", cancellationToken),
-            4 => await _jikanService.SearchAsync(trimmed, "anime", cancellationToken),
-            5 => await _jikanService.SearchAsync(trimmed, "manga", cancellationToken),
+            4 => await _kitsuService.SearchAsync(trimmed, "anime", cancellationToken),
+            5 => await _kitsuService.SearchAsync(trimmed, "manga", cancellationToken),
             6 => await _googleBooksService.SearchAsync(trimmed, cancellationToken),
             7 => await _musicBrainzService.SearchAsync(trimmed, cancellationToken),
             _ => Array.Empty<ExternalSearchResultDto>()
         };
 
         return Json(results);
+    }
+
+    /// <summary>GET /Media/Edit/{id} - Moderator/Admin only, corrects an existing catalogue row.</summary>
+    [HttpGet("Media/Edit/{id:int}")]
+    [Authorize(Roles = ModeratorOrAdmin)]
+    public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
+    {
+        var media = await _mediaService.GetDetailsAsync(id, viewerId: null, cancellationToken);
+        if (media is null)
+        {
+            return NotFound();
+        }
+
+        var model = new EditMediaViewModel
+        {
+            Form = new UpdateMediaRequest
+            {
+                Id = media.Id,
+                Title = media.Title,
+                CategoryId = media.CategoryId,
+                Creator = media.Creator,
+                ReleaseYear = media.ReleaseYear,
+                Description = media.Description,
+                OfficialCoverUrl = media.OfficialCoverUrl
+            },
+            Categories = await _mediaService.GetCategoriesAsync(cancellationToken)
+        };
+
+        return View(model);
+    }
+
+    /// <summary>POST /Media/Edit/{id}</summary>
+    [HttpPost("Media/Edit/{id:int}")]
+    [Authorize(Roles = ModeratorOrAdmin)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(
+        int id, UpdateMediaRequest form, CancellationToken cancellationToken)
+    {
+        form.Id = id;
+
+        if (!ModelState.IsValid)
+        {
+            return await RedisplayEditAsync(form, cancellationToken);
+        }
+
+        var result = await _mediaService.UpdateAsync(form, cancellationToken);
+        if (!result.Succeeded)
+        {
+            ModelState.AddModelError(string.Empty, result.FirstError!);
+            return await RedisplayEditAsync(form, cancellationToken);
+        }
+
+        TempData["Success"] = $"\"{form.Title}\" was updated.";
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    private async Task<IActionResult> RedisplayEditAsync(
+        UpdateMediaRequest form, CancellationToken cancellationToken)
+    {
+        var model = new EditMediaViewModel
+        {
+            Form = form,
+            Categories = await _mediaService.GetCategoriesAsync(cancellationToken)
+        };
+
+        return View(nameof(Edit), model);
     }
 
     /// <summary>POST /Media/Add</summary>

@@ -62,12 +62,15 @@
         <div class="navbar-right">
             @if (SignInManager.IsSignedIn(User))
             {
-                <a class="btn btn-ghost btn-sm d-none d-md-inline-flex"
-                   asp-controller="Entries" asp-action="Index">My Entries</a>
-                <a class="btn btn-ghost btn-sm d-none d-lg-inline-flex"
-                   asp-controller="Favorites" asp-action="Index">Favorites</a>
-                <a class="btn btn-ghost btn-sm d-none d-lg-inline-flex"
-                   asp-controller="Collections" asp-action="Index">Collections</a>
+                @if (!User.IsInRole(Roles.Admin))
+                {
+                    <a class="btn btn-ghost btn-sm d-none d-md-inline-flex"
+                       asp-controller="Entries" asp-action="Index">My Entries</a>
+                    <a class="btn btn-ghost btn-sm d-none d-lg-inline-flex"
+                       asp-controller="Favorites" asp-action="Index">Favorites</a>
+                    <a class="btn btn-ghost btn-sm d-none d-lg-inline-flex"
+                       asp-controller="Collections" asp-action="Index">Collections</a>
+                }
 
                 @* Phase 15: real-time notification bell. Always visible - unlike the text links
                    above it's compact enough to survive every breakpoint without collapsing into
@@ -132,12 +135,15 @@
             @if (SignInManager.IsSignedIn(User))
             {
                 <hr />
-                <a class="btn btn-ghost" data-bs-toggle="collapse" data-bs-target="#mobileNav"
-                   asp-controller="Entries" asp-action="Index">My Entries</a>
-                <a class="btn btn-ghost" data-bs-toggle="collapse" data-bs-target="#mobileNav"
-                   asp-controller="Favorites" asp-action="Index">Favorites</a>
-                <a class="btn btn-ghost" data-bs-toggle="collapse" data-bs-target="#mobileNav"
-                   asp-controller="Collections" asp-action="Index">Collections</a>
+                @if (!User.IsInRole(Roles.Admin))
+                {
+                    <a class="btn btn-ghost" data-bs-toggle="collapse" data-bs-target="#mobileNav"
+                       asp-controller="Entries" asp-action="Index">My Entries</a>
+                    <a class="btn btn-ghost" data-bs-toggle="collapse" data-bs-target="#mobileNav"
+                       asp-controller="Favorites" asp-action="Index">Favorites</a>
+                    <a class="btn btn-ghost" data-bs-toggle="collapse" data-bs-target="#mobileNav"
+                       asp-controller="Collections" asp-action="Index">Collections</a>
+                }
                 <a class="btn btn-ghost" data-bs-toggle="collapse" data-bs-target="#mobileNav"
                    asp-controller="Profile" asp-action="Index"
                    asp-route-userName="@User.Identity!.Name">My Profile</a>

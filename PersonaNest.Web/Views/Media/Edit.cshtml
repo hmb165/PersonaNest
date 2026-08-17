@@ -1,0 +1,74 @@
+@model EditMediaViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Edit Media";
+}
+
+<div class="page-shell" style="max-width:640px">
+    <a class="settings-back" asp-controller="Media" asp-action="Details" asp-route-id="@Model.Form.Id">
+        &#8592; Back to media
+    </a>
+
+    <h1 class="home-section-title" style="margin-bottom:var(--sp-2)">Edit Media</h1>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:var(--sp-6)">
+        Moderator/Admin only. Rating isn't editable here - it's calculated from members' entries
+        and would just be overwritten on the next recalculation.
+    </p>
+
+    <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+    <form asp-controller="Media" asp-action="Edit" asp-route-id="@Model.Form.Id" method="post" novalidate>
+        <input type="hidden" asp-for="Form.Id" />
+
+        <div class="form-group">
+            <label class="form-label" asp-for="Form.Title"></label>
+            <input class="form-input" asp-for="Form.Title" />
+            <span asp-validation-for="Form.Title"></span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)">
+            <div class="form-group">
+                <label class="form-label" asp-for="Form.CategoryId"></label>
+                <select class="form-select" asp-for="Form.CategoryId"
+                        asp-items="@(new SelectList(Model.Categories, nameof(CategoryDto.Id), nameof(CategoryDto.Name)))">
+                    <option value="">Choose a category…</option>
+                </select>
+                <span asp-validation-for="Form.CategoryId"></span>
+            </div>
+            <div class="form-group">
+                <label class="form-label" asp-for="Form.ReleaseYear"></label>
+                <input class="form-input" asp-for="Form.ReleaseYear" placeholder="2001"
+                       min="1800" max="@DateTime.UtcNow.Year" />
+                <span asp-validation-for="Form.ReleaseYear"></span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" asp-for="Form.Creator"></label>
+            <input class="form-input" asp-for="Form.Creator" placeholder="Studio Ghibli" />
+            <span asp-validation-for="Form.Creator"></span>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" asp-for="Form.Description"></label>
+            <textarea class="form-textarea" asp-for="Form.Description" style="min-height:100px"></textarea>
+            <span asp-validation-for="Form.Description"></span>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" asp-for="Form.OfficialCoverUrl"></label>
+            <input class="form-input" asp-for="Form.OfficialCoverUrl" placeholder="https://…" />
+            <div class="form-hint">A direct image URL.</div>
+            <span asp-validation-for="Form.OfficialCoverUrl"></span>
+        </div>
+
+        <div class="flex gap-2">
+            <a class="btn btn-secondary" asp-controller="Media" asp-action="Details" asp-route-id="@Model.Form.Id">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

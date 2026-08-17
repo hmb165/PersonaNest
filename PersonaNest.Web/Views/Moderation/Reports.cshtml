@@ -6,6 +6,17 @@
 }
 
 <div style="padding:var(--sp-6) var(--sp-8)">
+    @* Reports is reachable by Moderators too, who can't access the Admin-only /Admin panel -
+       route the back link to wherever this viewer actually belongs. *@
+    @if (User.IsInRole(Roles.Admin))
+    {
+        <a class="settings-back" style="margin:0 0 var(--sp-4) 0" asp-controller="Admin" asp-action="Index">&#8592; Back to admin</a>
+    }
+    else
+    {
+        <a class="settings-back" style="margin:0 0 var(--sp-4) 0" asp-controller="Moderation" asp-action="Dashboard">&#8592; Back to moderation</a>
+    }
+
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-5);flex-wrap:wrap;gap:var(--sp-3)">
         <div style="font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--text-primary)">
             Moderation Queue <span style="font-size:16px;color:var(--text-muted);font-family:var(--font-mono)">(@Model.TotalCount)</span>

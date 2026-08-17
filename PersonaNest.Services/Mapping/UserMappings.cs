@@ -10,8 +10,9 @@ namespace PersonaNest.Services.Mapping;
 public static class UserMappings
 {
     /// <summary>
-    /// Profile header. The accent pair resolves in this order: the user's custom hex, then their
-    /// selected theme, then the design default.
+    /// Profile header. Background and text accent are resolved independently - a Theme controls
+    /// only the background wash, a custom AccentColor controls only a few text highlights, and
+    /// neither one overrides the other.
     /// </summary>
     public static Expression<Func<ApplicationUser, ProfileHeaderDto>> ToProfileHeaderDto(
         string? viewerId) =>
@@ -23,11 +24,8 @@ public static class UserMappings
             Bio = u.Bio,
             ProfilePictureUrl = u.ProfilePictureUrl,
             BannerUrl = u.BannerUrl,
-            AccentColor = u.AccentColor
-                ?? (u.Theme != null ? u.Theme.PrimaryHex : DesignDefaults.AccentColor),
-            AccentColorDark = u.Theme != null
-                ? u.Theme.PrimaryDimHex
-                : DesignDefaults.AccentColorDark,
+            BackgroundColor = u.Theme != null ? u.Theme.PrimaryHex : DesignDefaults.AccentColor,
+            AccentColor = u.AccentColor ?? DesignDefaults.AccentColor,
             CreatedAt = u.CreatedAt,
             DefaultEntryPrivacy = u.DefaultEntryPrivacy,
             IsViewerSelf = viewerId != null && u.Id == viewerId,

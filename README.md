@@ -7,7 +7,7 @@ games, books, anime, manga, TV and music as **Entries** against a shared, commun
 **Media** catalogue.
 
 **Current state: all bonus requirements complete** — real-time notifications (SignalR), external
-API integrations (TMDB, RAWG, Jikan, Google Books, MusicBrainz — one per media category), and an
+API integrations (TMDB, RAWG, Kitsu, Google Books, MusicBrainz — one per media category), and an
 AI feature (Anthropic-generated taste narrative). See "Bonus features" below for setup (TMDB,
 RAWG and Anthropic need an API key you provide via `dotnet user-secrets`; the rest work keyless).
 A large UI/UX polish pass followed (new logo, redesigned navbar, separate Edit/Settings pages,
@@ -64,9 +64,28 @@ dotnet restore
 dotnet build
 ```
 
+## Prerequisites
+
+- .NET 8 SDK
+- SQL Server LocalDB - bundled with Visual Studio's ".NET desktop"/"ASP.NET and web development"
+  workload, so this is present on most Windows dev machines by default. On macOS/Linux, or a
+  Windows machine without it, either install LocalDB standalone or change
+  `ConnectionStrings:DefaultConnection` in `appsettings.json` to point at any other SQL Server
+  instance.
+
 ## Database setup
 
-Set the seed passwords once (they are never stored in source control):
+**Nothing manual is required to get a working database.** All migrations are already committed
+(`PersonaNest.Infrastructure/Migrations/`), and running the Web project in Development
+(`dotnet run --project PersonaNest.Web`, or F5 in Visual Studio) automatically applies any
+pending ones and seeds roles + three demo accounts (User/Moderator/Admin) against SQL Server
+LocalDB on first run - no `dotnet ef` commands needed for a normal clone-and-run.
+
+Demo account passwords are never committed to source control. If you haven't set your own via
+`dotnet user-secrets`, the first run **generates one automatically** for any demo account that
+doesn't exist yet, logs it once, and writes it to a gitignored `PersonaNest.Web/dev-credentials.local.txt`
+- so the app never fails to start just because a secret wasn't configured. To set your own
+instead (optional, and only takes effect for accounts that don't exist yet):
 
 ```bash
 dotnet user-secrets set "Seed:AdminPassword"     "<password>" -p PersonaNest.Web
@@ -74,21 +93,23 @@ dotnet user-secrets set "Seed:ModeratorPassword" "<password>" -p PersonaNest.Web
 dotnet user-secrets set "Seed:UserPassword"      "<password>" -p PersonaNest.Web
 ```
 
-Create the initial migration and apply it:
+If you do need to (re)create migrations from scratch - e.g. after deleting `Migrations/` - they
+run entirely inside the Infrastructure project via `PersonaNestDbContextFactory`, so
+`PersonaNest.Web` never needs a reference to `PersonaNest.Infrastructure`:
 
 ```bash
-dotnet ef migrations add InitialCreate \
-    -p PersonaNest.Infrastructure -s PersonaNest.Infrastructure
-dotnet ef database update \
-    -p PersonaNest.Infrastructure -s PersonaNest.Infrastructure
+dotnet ef migrations add <Name> -p PersonaNest.Infrastructure -s PersonaNest.Infrastructure
+dotnet ef database update      -p PersonaNest.Infrastructure -s PersonaNest.Infrastructure
 ```
 
-Migrations run entirely inside the Infrastructure project via
-`PersonaNestDbContextFactory`, so `PersonaNest.Web` never needs a reference to
-`PersonaNest.Infrastructure`. Running the Web project in Development also applies pending
-migrations and seeds roles plus the three demo accounts automatically.
+Don't run `dotnet ef migrations add InitialCreate` on a normal clone - that migration already
+exists in the repo, and adding a second one with the same class name won't compile.
 
 ## Per-phase workflow
+
+*(Historical process notes from how this project was built incrementally, phase by phase, against
+zipped snapshots from the assignment portal - not something a GitHub clone needs to follow. If
+you're just running the finished project, skip to "Run" below.)*
 
 Each phase ships as a **complete snapshot** of the solution, not a delta. Extract it *over* the
 existing folder — it overwrites changed files and adds new ones, and never deletes anything.
@@ -216,28 +237,31 @@ still works manually - and a missing/failing AI call means the Taste Profile car
 show the extra paragraph. Neither ever produces a 500 or breaks the background service's other work.
 
 **Setup** - set your own keys locally, the same way the seed passwords already work (never
-committed to source control). Only three of the five search providers need a key:
+committed to source control):
 
 ```bash
-dotnet user-secrets set "TMDb:ApiKey"      "<your TMDB v3 API key>"      -p PersonaNest.Web
-dotnet user-secrets set "Rawg:ApiKey"      "<your RAWG API key>"         -p PersonaNest.Web
-dotnet user-secrets set "Anthropic:ApiKey" "<your Anthropic API key>"    -p PersonaNest.Web
+dotnet user-secrets set "TMDb:ApiKey"        "<your TMDB v3 API key>"      -p PersonaNest.Web
+dotnet user-secrets set "Rawg:ApiKey"        "<your RAWG API key>"         -p PersonaNest.Web
+dotnet user-secrets set "GoogleBooks:ApiKey" "<your Google Books API key>" -p PersonaNest.Web
+dotnet user-secrets set "Anthropic:ApiKey"   "<your Anthropic API key>"    -p PersonaNest.Web
 ```
 
-TMDB keys are free at themoviedb.org (account → Settings → API). RAWG keys are free at rawg.io/apidocs.
-Anthropic keys are issued at console.anthropic.com. Jikan (MyAnimeList), Google Books and
-MusicBrainz all work with **no key at all** (Google Books and Jikan run on shared, low keyless rate
-limits - fine for occasional interactive searches, but expect the odd 429/504 under load).
+TMDB keys are free at themoviedb.org (account → Settings → API). RAWG keys are free at
+rawg.io/apidocs. Google Books keys are free at console.cloud.google.com (enable "Books API" →
+Credentials → API key) - Google tightened unauthenticated `volumes` search to a 0 daily quota after
+this integration was first written, so a key is now required, not optional. Anthropic keys are
+issued at console.anthropic.com. Kitsu and MusicBrainz work with **no key at all**.
 
 - **One search provider per category**, all wired into the same Add Media auto-fill panel
   (`wwwroot/js/external-search.js`, progressive enhancement - hidden entirely without JS, manual
-  entry always works):
+  entry always works) and, for Books and Anime, into a "More from &lt;provider&gt;" section on the
+  main `/Search` page too (`SearchController`, `Views/Search/_ExternalResults.cshtml`):
 
   | Category | Provider | Service |
   |---|---|---|
   | Games | RAWG | `IRawgService`/`RawgService` |
   | Movies / TV Shows | TMDB | `ITmdbService`/`TmdbService` |
-  | Anime / Manga | Jikan (MyAnimeList) | `IJikanService`/`JikanService` |
+  | Anime / Manga | Kitsu | `IKitsuService`/`KitsuService` |
   | Books | Google Books | `IGoogleBooksService`/`GoogleBooksService` |
   | Music | MusicBrainz | `IMusicBrainzService`/`MusicBrainzService` |
 
@@ -247,6 +271,9 @@ limits - fine for occasional interactive searches, but expect the odd 429/504 un
   proxied through `MediaController.SearchExternal` (`[Authorize]`, not part of the
   Swagger-documented `api/` surface) so no provider key ever reaches the browser. All five share
   one response shape, `ExternalSearchResultDto`.
+  Anime/Manga originally used Jikan (unofficial MyAnimeList API) - swapped for Kitsu after Jikan
+  proved too unreliable live (frequent 504s, including "MyAnimeList may be down" errors from
+  Jikan's own upstream, independent of any rate limit).
 - **AI (`IAiNarrativeGenerator`/`AnthropicNarrativeGenerator`)**: a 2-3 sentence personalized
   paragraph built from the same `TasteProfileDto` the Taste Profile card already renders (top
   categories, top tags, average rating, most active month). Generated by the existing Phase 12
@@ -262,11 +289,10 @@ limits - fine for occasional interactive searches, but expect the odd 429/504 un
   `HttpMessageHandler` - no real network calls in the test suite) plus 4 new
   `TasteProfileCalculatorTests` covering the freshness-window skip logic - 72 total, all passing.
 - **Verified live**: with no keys configured, app starts cleanly and every provider degrades to
-  `200 []` rather than an error. With no key needed, MusicBrainz search was verified end-to-end
-  live against the real API (10 real results parsed correctly, including cover art URLs); Google
-  Books and Jikan hit transient 429/504 responses from their shared keyless tier during testing,
-  both handled by the same graceful-empty-list path with no server error. Full verification of the
-  keyed providers (TMDB, RAWG) and the AI narrative needs the keys above.
+  `200 []` rather than an error, never a 500. MusicBrainz and Kitsu (no key needed) were verified
+  end-to-end live against their real APIs; Google Books was verified live once a key was set
+  (returns real results; the earlier keyless 429 is explained above). Full verification of TMDB,
+  RAWG and the AI narrative needs the keys above.
 
 ## Run
 
@@ -341,8 +367,8 @@ surface and an authenticated one without duplicating the whole MVC action set.
 dotnet test
 ```
 
-58 tests across `PersonaNest.Tests/Services/` (Phase 13 added the first 48; Phase 15 added 10 more
-covering notifications).
+72 tests across `PersonaNest.Tests/Services/` (Phase 13 added the first 48, Phase 15 added 10 more
+covering notifications, and the bonus external-API/AI work added the remaining 14).
 
 ---
 

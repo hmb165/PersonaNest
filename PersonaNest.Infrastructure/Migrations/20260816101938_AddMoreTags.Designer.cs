@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PersonaNest.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using PersonaNest.Infrastructure.Data;
 namespace PersonaNest.Infrastructure.Migrations
 {
     [DbContext(typeof(PersonaNestDbContext))]
-    partial class PersonaNestDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260816101938_AddMoreTags")]
+    partial class AddMoreTags
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

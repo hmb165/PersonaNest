@@ -24,8 +24,24 @@ public sealed class SearchViewModel
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 20;
 
+    /// <summary>Live Google Books hits when the Books filter is active - see SearchController.</summary>
+    public IReadOnlyList<ExternalSearchResultDto> ExternalBookResults { get; set; } =
+        Array.Empty<ExternalSearchResultDto>();
+
+    /// <summary>Live Kitsu hits when the Anime filter is active - see SearchController.</summary>
+    public IReadOnlyList<ExternalSearchResultDto> ExternalAnimeResults { get; set; } =
+        Array.Empty<ExternalSearchResultDto>();
+
     public int TotalPages => PageSize <= 0 ? 0 : (int)Math.Ceiling(TotalCount / (double)PageSize);
     public bool HasResults => Results.Count > 0;
+}
+
+/// <summary>One "More from &lt;provider&gt;" section on /Search - see Views/Search/_ExternalResults.</summary>
+public sealed class ExternalResultsSectionViewModel
+{
+    public string SourceLabel { get; set; } = string.Empty;
+    public int CategoryId { get; set; }
+    public IReadOnlyList<ExternalSearchResultDto> Results { get; set; } = Array.Empty<ExternalSearchResultDto>();
 }
 
 /// <summary>/Media/Details/{id} — the shared community page.</summary>
@@ -50,4 +66,13 @@ public sealed class AddMediaViewModel
     public IReadOnlyList<MediaCardDto> PossibleDuplicates { get; set; } = Array.Empty<MediaCardDto>();
 
     public bool HasDuplicateWarning => PossibleDuplicates.Count > 0;
+}
+
+/// <summary>/Media/Edit — Moderator/Admin only, corrects an existing catalogue row's fields.
+/// AverageRating is deliberately not here: it's a cached aggregate written through from Entries
+/// and reconciled nightly (decision D-20), so hand-editing it would just be overwritten.</summary>
+public sealed class EditMediaViewModel
+{
+    public UpdateMediaRequest Form { get; set; } = new();
+    public IReadOnlyList<CategoryDto> Categories { get; set; } = Array.Empty<CategoryDto>();
 }

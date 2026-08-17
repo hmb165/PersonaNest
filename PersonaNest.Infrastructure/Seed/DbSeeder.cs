@@ -1,7 +1,9 @@
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PersonaNest.Domain.Constants;
 using PersonaNest.Domain.Entities;
@@ -14,8 +16,11 @@ namespace PersonaNest.Infrastructure.Seed;
 /// <list type="bullet">
 ///   <item>Roles are seeded in every environment.</item>
 ///   <item>Themes, Categories and Tags are seeded through the migration itself (HasData).</item>
-///   <item>Demo accounts are seeded <b>only in Development</b>, with passwords read from
-///         configuration. Nothing is hard-coded.</item>
+///   <item>Demo accounts are seeded <b>only in Development</b>. A password from
+///         <c>dotnet user-secrets</c> is preferred; if none is configured (e.g. a fresh clone that
+///         hasn't been set up yet), a random one is generated instead so the app never crashes on
+///         first run. Generated passwords are logged once and written to a gitignored local file -
+///         never a hard-coded value, and never committed.</item>
 ///   <item>A starter media catalogue is seeded <b>only in Development</b>, attributed to the
 ///         seeded admin account, so the trending rail and category pages aren't empty locally.</item>
 /// </list>
@@ -30,7 +35,8 @@ public static class DbSeeder
         DevAccounts =
         {
             ("Seed:AdminPassword",     "admin",     "admin@personanest.local",     "Site Admin",      Roles.Admin),
-            ("Seed:ModeratorPassword", "moderator", "moderator@personanest.local", "Community Mod",   Roles.Moderator)
+            ("Seed:ModeratorPassword", "moderator", "moderator@personanest.local", "Community Mod",   Roles.Moderator),
+            ("Seed:UserPassword",      "user",      "user@personanest.local",      "Demo User",        Roles.User)
         };
 
     public static async Task SeedAsync(
@@ -46,6 +52,7 @@ public static class DbSeeder
         var roleManager = sp.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
         var configuration = sp.GetRequiredService<IConfiguration>();
+        var environment = sp.GetRequiredService<IHostEnvironment>();
 
         // Applying migrations automatically is a development convenience only. In any other
         // environment the deployment pipeline owns schema changes.
@@ -58,7 +65,8 @@ public static class DbSeeder
 
         if (isDevelopment)
         {
-            await SeedDevelopmentAccountsAsync(userManager, configuration, logger);
+            await SeedDevelopmentAccountsAsync(
+                userManager, configuration, environment.ContentRootPath, logger);
             await SeedCatalogueAsync(context, userManager, logger, cancellationToken);
         }
     }
@@ -86,8 +94,11 @@ public static class DbSeeder
     private static async Task SeedDevelopmentAccountsAsync(
         UserManager<ApplicationUser> userManager,
         IConfiguration configuration,
+        string contentRootPath,
         ILogger logger)
     {
+        var generated = new List<(string UserName, string Password)>();
+
         foreach (var (key, userName, email, displayName, role) in DevAccounts)
         {
             if (await userManager.FindByNameAsync(userName) is not null)
@@ -95,15 +106,15 @@ public static class DbSeeder
                 continue;
             }
 
-            // Fail loudly rather than inventing a default. Set these with user-secrets:
+            // A user-secret is preferred; a fresh clone won't have one (passwords are never
+            // committed), so a random one is generated instead rather than crashing the whole app
+            // on first run. Override at any time with:
             //   dotnet user-secrets set "Seed:AdminPassword" "<password>" -p PersonaNest.Web
             var password = configuration[key];
             if (string.IsNullOrWhiteSpace(password))
             {
-                throw new InvalidOperationException(
-                    $"Development seeding needs configuration value '{key}'. " +
-                    "Set it with: dotnet user-secrets set \"" + key + "\" \"<password>\" " +
-                    "-p PersonaNest.Web");
+                password = GenerateDevPassword();
+                generated.Add((userName, password));
             }
 
             var user = new ApplicationUser
@@ -133,6 +144,68 @@ public static class DbSeeder
             logger.LogInformation(
                 "Seeded development account {UserName} in role {Role}.", userName, role);
         }
+
+        if (generated.Count > 0)
+        {
+            WriteGeneratedCredentials(generated, contentRootPath, logger);
+        }
+    }
+
+    /// <summary>
+    /// Meets Identity's configured policy (8+ chars, upper/lower/digit - see
+    /// DependencyInjection.AddIdentity) by construction, not by chance: the first three
+    /// characters each come from a required class, the rest are drawn from the combined pool.
+    /// Ambiguous-looking characters (0/O, 1/I/l) are excluded since this gets read off a screen.
+    /// </summary>
+    private static string GenerateDevPassword()
+    {
+        const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+        const string lower = "abcdefghjkmnpqrstuvwxyz";
+        const string digits = "23456789";
+        const string all = upper + lower + digits;
+
+        var chars = new char[12];
+        chars[0] = upper[RandomNumberGenerator.GetInt32(upper.Length)];
+        chars[1] = lower[RandomNumberGenerator.GetInt32(lower.Length)];
+        chars[2] = digits[RandomNumberGenerator.GetInt32(digits.Length)];
+        for (var i = 3; i < chars.Length; i++)
+        {
+            chars[i] = all[RandomNumberGenerator.GetInt32(all.Length)];
+        }
+
+        return new string(chars);
+    }
+
+    /// <summary>
+    /// Generated passwords are logged once (easy to miss in a wall of startup output) and also
+    /// written to a local, gitignored file so they can be found again after the console scrolls
+    /// away - this file is never committed and is overwritten fresh on every generation.
+    /// </summary>
+    private static void WriteGeneratedCredentials(
+        List<(string UserName, string Password)> generated, string contentRootPath, ILogger logger)
+    {
+        var path = Path.Combine(contentRootPath, "dev-credentials.local.txt");
+        var lines = new List<string>
+        {
+            "PersonaNest - auto-generated development credentials",
+            "",
+            "No Seed:<Role>Password was configured via dotnet user-secrets, so these were",
+            "generated for you on first run. Existing accounts keep their original password -",
+            "this file only reflects whichever accounts were most recently created this way.",
+            ""
+        };
+        lines.AddRange(generated.Select(g => $"  {g.UserName} / {g.Password}"));
+        lines.Add("");
+        lines.Add("To set your own instead: dotnet user-secrets set \"Seed:AdminPassword\" \"<password>\" -p PersonaNest.Web");
+
+        File.WriteAllLines(path, lines);
+
+        logger.LogWarning(
+            "No Seed:<Role>Password configured - generated credentials for {Count} account(s). " +
+            "Logged below and saved to {Path}:\n{Credentials}",
+            generated.Count,
+            path,
+            string.Join('\n', generated.Select(g => $"  {g.UserName} / {g.Password}")));
     }
 
     // Matches CategoryConfiguration's HasData ids.

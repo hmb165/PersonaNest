@@ -5,6 +5,8 @@
 }
 
 <div style="padding:var(--sp-6) var(--sp-8)">
+    <a class="settings-back" style="margin:0 0 var(--sp-4) 0" asp-controller="Admin" asp-action="Index">&#8592; Back to admin</a>
+
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-5);flex-wrap:wrap;gap:var(--sp-3)">
         <div style="font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--text-primary)">
             Media Management <span style="font-size:16px;color:var(--text-muted);font-family:var(--font-mono)">(@Model.TotalCount)</span>
@@ -57,10 +59,13 @@
                                 }
                             </td>
                             <td>
-                                <form asp-controller="Admin" asp-action="MediaDelete" asp-route-id="@media.Id" method="post"
-                                      onsubmit="return confirm('Remove \'@media.Title\'? Existing entries keep their data but the item leaves search and browsing (§9 - soft delete, never hard).');">
-                                    <button type="submit" class="btn btn-danger btn-sm">Remove</button>
-                                </form>
+                                <div class="flex gap-2">
+                                    <a class="btn btn-ghost btn-sm" asp-controller="Media" asp-action="Edit" asp-route-id="@media.Id">Edit</a>
+                                    <form asp-controller="Admin" asp-action="MediaDelete" asp-route-id="@media.Id" method="post"
+                                          onsubmit="return confirm('Remove \'@media.Title\'? Existing entries keep their data but the item leaves search and browsing (§9 - soft delete, never hard).');">
+                                        <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     }

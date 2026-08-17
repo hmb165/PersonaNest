@@ -26,6 +26,18 @@ public class TagConfiguration : IEntityTypeConfiguration<Tag>
             new Tag { Id =  9, Name = "Fantasy",            NormalizedName = "FANTASY" },
             new Tag { Id = 10, Name = "Rewatch",            NormalizedName = "REWATCH" },
             new Tag { Id = 11, Name = "Underrated",         NormalizedName = "UNDERRATED" },
-            new Tag { Id = 12, Name = "OST Standout",       NormalizedName = "OST STANDOUT" });
+            new Tag { Id = 12, Name = "OST Standout",       NormalizedName = "OST STANDOUT" },
+            new Tag { Id = 13, Name = "Nostalgic",          NormalizedName = "NOSTALGIC" },
+            new Tag { Id = 14, Name = "Binge-Worthy",       NormalizedName = "BINGE-WORTHY" },
+            new Tag { Id = 15, Name = "Slow Burn",          NormalizedName = "SLOW BURN" },
+            new Tag { Id = 16, Name = "Plot Twist",         NormalizedName = "PLOT TWIST" },
+            new Tag { Id = 17, Name = "Feel-Good",          NormalizedName = "FEEL-GOOD" },
+            new Tag { Id = 18, Name = "Dark & Gritty",      NormalizedName = "DARK & GRITTY" },
+            new Tag { Id = 19, Name = "Character-Driven",   NormalizedName = "CHARACTER-DRIVEN" },
+            new Tag { Id = 20, Name = "Visually Stunning",  NormalizedName = "VISUALLY STUNNING" },
+            new Tag { Id = 21, Name = "Guilty Pleasure",    NormalizedName = "GUILTY PLEASURE" },
+            new Tag { Id = 22, Name = "Cult Classic",       NormalizedName = "CULT CLASSIC" },
+            new Tag { Id = 23, Name = "Tearjerker",         NormalizedName = "TEARJERKER" },
+            new Tag { Id = 24, Name = "Mind-Bending",       NormalizedName = "MIND-BENDING" });
     }
 }

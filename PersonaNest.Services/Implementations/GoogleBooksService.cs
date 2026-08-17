@@ -12,12 +12,15 @@ public class GoogleBooksService : IGoogleBooksService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<GoogleBooksService> _logger;
+    private readonly string? _apiKey;
 
     public GoogleBooksService(
         HttpClient httpClient, IConfiguration configuration, ILogger<GoogleBooksService> logger)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+        _apiKey = configuration["GoogleBooks:ApiKey"];
 
         if (_httpClient.BaseAddress is null)
         {
@@ -36,7 +39,12 @@ public class GoogleBooksService : IGoogleBooksService
 
         try
         {
-            var url = $"volumes?q={Uri.EscapeDataString(query)}&maxResults=10";
+            // Google's keyless "volumes" search now carries a 0 daily quota for unauthenticated
+            // callers - a key is required, unlike when this was first written. Still sent without
+            // one if unset, in case that changes back; SearchAsync degrades to empty either way.
+            var url = string.IsNullOrWhiteSpace(_apiKey)
+                ? $"volumes?q={Uri.EscapeDataString(query)}&maxResults=10"
+                : $"volumes?q={Uri.EscapeDataString(query)}&maxResults=10&key={Uri.EscapeDataString(_apiKey)}";
 
             var response = await _httpClient.GetFromJsonAsync<GoogleBooksResponse>(url, cancellationToken);
             if (response?.Items is null)

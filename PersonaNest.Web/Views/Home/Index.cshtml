@@ -30,23 +30,32 @@
     </div>
 
     @{
-        var heroImages = Model.Trending
-            .Where(m => !string.IsNullOrEmpty(m.OfficialCoverUrl))
-            .Take(6)
-            .ToList();
+        // Static, curated, high-resolution images spanning different media categories - member-
+        // submitted OfficialCoverUrl values (arbitrary aspect ratio/resolution, whatever an
+        // external API or a user pasted in) made this carousel look small and muddy at hero size.
+        var heroImages = new[]
+        {
+            "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=1400&q=80&auto=format&fit=crop",     // games - neon-lit controller
+            "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1400&q=80&auto=format&fit=crop",   // games - neon arcade
+            "https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=1400&q=80&auto=format&fit=crop",   // movies - projector + smoke
+            "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=1400&q=80&auto=format&fit=crop",   // movies - neon cinema sign
+            "https://images.unsplash.com/photo-1585951237318-9ea5e175b891?w=1400&q=80&auto=format&fit=crop",   // movies - clapperboard
+            "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1400&q=80&auto=format&fit=crop",   // books - library
+            "https://images.unsplash.com/photo-1541963463532-d68292c34b19?w=1400&q=80&auto=format&fit=crop",   // books - reading outdoors
+            "https://images.unsplash.com/photo-1483412033650-1015ddeb83d1?w=1400&q=80&auto=format&fit=crop",   // music - vinyl + headphones
+            "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1400&q=80&auto=format&fit=crop",   // music - vintage mic
+            "https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=1400&q=80&auto=format&fit=crop"    // music - piano keys
+        };
     }
-    @if (heroImages.Count > 1)
-    {
-        <div class="home-hero-visual" aria-hidden="true">
-            @for (var i = 0; i < heroImages.Count; i++)
-            {
-                <div class="home-hero-visual-slide @(i == 0 ? "active" : "")">
-                    <img src="@heroImages[i].OfficialCoverUrl" alt="" loading="@(i == 0 ? "eager" : "lazy")" />
-                </div>
-            }
-            <div class="home-hero-visual-gradient"></div>
-        </div>
-    }
+    <div class="home-hero-visual" aria-hidden="true">
+        @for (var i = 0; i < heroImages.Length; i++)
+        {
+            <div class="home-hero-visual-slide @(i == 0 ? "active" : "")">
+                <img src="@heroImages[i]" alt="" loading="@(i == 0 ? "eager" : "lazy")" />
+            </div>
+        }
+        <div class="home-hero-visual-gradient"></div>
+    </div>
 </section>
 
 @* Categories are seeded reference data, read through IMediaService - never hard-coded in the
