@@ -280,6 +280,8 @@ public static class DbSeeder
             M(CategoryAnime, "Cowboy Bebop", "Sunrise", 1998, "A ragtag crew of bounty hunters chase criminals across the solar system."),
             M(CategoryAnime, "Death Note", "Madhouse", 2006, "A student gains a notebook that can kill anyone whose name is written in it."),
             M(CategoryAnime, "Princess Mononoke", "Studio Ghibli / Hayao Miyazaki", 1997, "A prince becomes entangled in a struggle between forest gods and a mining colony."),
+            M(CategoryAnime, "Naruto: Shippuuden", "Studio Pierrot", 2007, "It has been two and a half years since Naruto Uzumaki left the Hidden Leaf Village for training. Now Akatsuki, a mysterious organization of elite rogue ninja, threatens the shinobi world he has sworn to protect."),
+            M(CategoryAnime, "Fire Force", "Atsushi Ohkubo", 2015, "In a world ravaged by spontaneous human combustion, a special company of pyrokinetic firefighters battles the deadly phenomenon consuming the last city standing."),
 
             // Manga
             M(CategoryManga, "Berserk", "Kentaro Miura", 1989, "A lone mercenary swordsman is pursued by demonic forces in a brutal medieval-inspired world."),
@@ -288,6 +290,7 @@ public static class DbSeeder
             M(CategoryManga, "Fullmetal Alchemist", "Hiromu Arakawa", 2001, "Two brothers use alchemy in a quest to restore their bodies after a forbidden ritual goes wrong."),
             M(CategoryManga, "Chainsaw Man", "Tatsuki Fujimoto", 2018, "A young devil hunter merges with his chainsaw devil to survive Japan's criminal underworld."),
             M(CategoryManga, "Vinland Saga", "Makoto Yukimura", 2005, "A young Viking's quest for revenge unfolds against the historical backdrop of medieval Europe."),
+            M(CategoryManga, "Jujutsu Kaisen", "Gege Akutami", 2018, "A boy swallows a cursed talisman to save his friends and is drawn into a secret academy for sorcerers, hunting the deadly curses roaming Japan."),
 
             // Books
             M(CategoryBooks, "Dune", "Frank Herbert", 1965, "A young heir becomes entangled in the politics and mysticism of the desert planet Arrakis."),
@@ -297,6 +300,8 @@ public static class DbSeeder
             M(CategoryBooks, "The Name of the Wind", "Patrick Rothfuss", 2007, "A legendary figure recounts the true story of his life as a magician, thief, and musician."),
             M(CategoryBooks, "Project Hail Mary", "Andy Weir", 2021, "A lone astronaut wakes with no memory on a mission to save humanity from extinction."),
             M(CategoryBooks, "Norwegian Wood", "Haruki Murakami", 1987, "A man recalls his youth and the two women who shaped his life in 1960s Tokyo."),
+            M(CategoryBooks, "White Nights", "Fyodor Dostoevsky", 1848, "A lonely dreamer in St. Petersburg spends four nights sharing his hopes and heartbreak with a young woman waiting for a man who may never return."),
+            M(CategoryBooks, "Harry Potter and the Goblet of Fire", "J.K. Rowling", 2000, "Harry is astonished to find his name entered into the deadly Triwizard Tournament, facing dragons, dark wizards, and challenges no fourth-year student should have to survive."),
 
             // Music
             M(CategoryMusic, "The Dark Side of the Moon", "Pink Floyd", 1973, "A concept album exploring conflict, greed, time, and mental illness."),
@@ -304,7 +309,8 @@ public static class DbSeeder
             M(CategoryMusic, "Rumours", "Fleetwood Mac", 1977, "A landmark rock album written amid the band's own tangled relationships."),
             M(CategoryMusic, "OK Computer", "Radiohead", 1997, "An atmospheric album grappling with alienation and technology at the turn of the millennium."),
             M(CategoryMusic, "Discovery", "Daft Punk", 2001, "A French house album blending disco, funk, and pop into a genre-defining sound."),
-            M(CategoryMusic, "Blonde", "Frank Ocean", 2016, "An introspective, genre-blurring album about memory, identity, and love.")
+            M(CategoryMusic, "Blonde", "Frank Ocean", 2016, "An introspective, genre-blurring album about memory, identity, and love."),
+            M(CategoryMusic, "Donda", "Ye (Kanye West)", 2021, "A sprawling, gospel-inflected album named for and dedicated to Kanye West's late mother.")
         };
 
         // Per-item idempotent (title + category), not "table is empty": a dev database that
